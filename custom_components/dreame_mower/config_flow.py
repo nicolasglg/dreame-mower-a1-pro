@@ -70,7 +70,9 @@ class DreameMowerOptionsFlowHandler(OptionsFlow):
         """Initialize Dreame Mower options flow."""
         self.config_entry = config_entry
 
-    async def async_step_init(self, user_input: dict[str, Any] | None = None) -> FlowResult:
+    async def async_step_init(
+        self, user_input: dict[str, Any] | None = None
+    ) -> FlowResult:
         """Manage Dreame/Mova Mower options."""
         errors = {}
         data = self.config_entry.data
@@ -87,24 +89,27 @@ class DreameMowerOptionsFlowHandler(OptionsFlow):
                 notify = []
 
         data_schema = vol.Schema(
-            {vol.Required(CONF_NOTIFY, default=notify): cv.multi_select(NOTIFICATION)})
+            {vol.Required(CONF_NOTIFY, default=notify): cv.multi_select(NOTIFICATION)}
+        )
         if data[CONF_USERNAME]:
             data_schema = data_schema.extend(
                 {
-                    vol.Required(CONF_COLOR_SCHEME, default=options[CONF_COLOR_SCHEME]): vol.In(
-                        list(MAP_COLOR_SCHEME_LIST.keys())
-                    ),
+                    vol.Required(
+                        CONF_COLOR_SCHEME, default=options[CONF_COLOR_SCHEME]
+                    ): vol.In(list(MAP_COLOR_SCHEME_LIST.keys())),
                     vol.Required(
                         CONF_ICON_SET,
                         default=options.get(
-                            CONF_ICON_SET, next(iter(MAP_ICON_SET_LIST))),
+                            CONF_ICON_SET, next(iter(MAP_ICON_SET_LIST))
+                        ),
                     ): vol.In(list(MAP_ICON_SET_LIST.keys())),
                     vol.Required(
                         CONF_MAP_OBJECTS,
-                        default=options.get(
-                            CONF_MAP_OBJECTS, list(MAP_OBJECTS.keys())),
+                        default=options.get(CONF_MAP_OBJECTS, list(MAP_OBJECTS.keys())),
                     ): cv.multi_select(MAP_OBJECTS),
-                    vol.Required(CONF_SQUARE, default=options.get(CONF_SQUARE, False)): bool,
+                    vol.Required(
+                        CONF_SQUARE, default=options.get(CONF_SQUARE, False)
+                    ): bool,
                     vol.Required(
                         CONF_LOW_RESOLUTION,
                         default=options.get(CONF_LOW_RESOLUTION, False),
@@ -160,7 +165,9 @@ class DreameMowerFlowHandler(ConfigFlow, domain=DOMAIN):
         """Get the options flow for this handler."""
         return DreameMowerOptionsFlowHandler(config_entry)
 
-    async def async_step_user(self, user_input: dict[str, Any] | None = None) -> FlowResult:
+    async def async_step_user(
+        self, user_input: dict[str, Any] | None = None
+    ) -> FlowResult:
         """Handle a flow initialized by the user."""
         if user_input is not None:
             config_type = user_input.get(CONF_TYPE, DREAMEHOME)
@@ -173,7 +180,12 @@ class DreameMowerFlowHandler(ConfigFlow, domain=DOMAIN):
         return self.async_show_form(
             step_id="user",
             data_schema=vol.Schema(
-                {vol.Required(CONF_TYPE, default=DREAMEHOME): vol.In([DREAMEHOME, MOVAHOME, LOCAL])}),
+                {
+                    vol.Required(CONF_TYPE, default=DREAMEHOME): vol.In(
+                        [DREAMEHOME, MOVAHOME, LOCAL]
+                    )
+                }
+            ),
             errors={},
         )
 
@@ -189,13 +201,17 @@ class DreameMowerFlowHandler(ConfigFlow, domain=DOMAIN):
         self.account_type = user_input.get(CONF_ACCOUNT_TYPE, DREAMEHOME)
         return await self.async_step_reauth_confirm()
 
-    async def async_step_reauth_confirm(self, user_input: dict[str, Any] | None = None) -> FlowResult:
+    async def async_step_reauth_confirm(
+        self, user_input: dict[str, Any] | None = None
+    ) -> FlowResult:
         """Dialog that informs the user that reauth is required."""
         if user_input is not None:
             return await self.async_step_cloud()
         return self.async_show_form(step_id="reauth_confirm")
 
-    async def async_step_connect(self, user_input: dict[str, Any] | None = None) -> FlowResult:
+    async def async_step_connect(
+        self, user_input: dict[str, Any] | None = None
+    ) -> FlowResult:
         """Connect to a Dreame/Mova Mower device."""
         errors: dict[str, str] = {}
         if self.prefer_cloud or (self.token and len(self.token) == 32):
@@ -212,13 +228,20 @@ class DreameMowerFlowHandler(ConfigFlow, domain=DOMAIN):
                     )
                 else:
                     self.protocol.set_credentials(
-                        self.host, self.token, account_type=self.account_type)
+                        self.host, self.token, account_type=self.account_type
+                    )
 
                 if self.protocol.device_cloud:
                     self.protocol.device_cloud._did = self.device_id
 
-                if (self.account_type != "dreame" and self.account_type != "mova") or self.mac is None or self.model is None:
-                    info = await self.hass.async_add_executor_job(self.protocol.connect, 5)
+                if (
+                    (self.account_type != "dreame" and self.account_type != "mova")
+                    or self.mac is None
+                    or self.model is None
+                ):
+                    info = await self.hass.async_add_executor_job(
+                        self.protocol.connect, 5
+                    )
                     if info:
                         self.mac = info["mac"]
                         self.model = info["model"]
@@ -321,14 +344,20 @@ class DreameMowerFlowHandler(ConfigFlow, domain=DOMAIN):
                     errors["base"] = "login_error"
                 elif self.protocol.cloud.logged_in:
                     persistent_notification.dismiss(
-                        self.hass, f"{DOMAIN}_{NOTIFICATION_ID_2FA_LOGIN}")
+                        self.hass, f"{DOMAIN}_{NOTIFICATION_ID_2FA_LOGIN}"
+                    )
 
-                    devices = await self.hass.async_add_executor_job(self.protocol.cloud.get_devices)
+                    devices = await self.hass.async_add_executor_job(
+                        self.protocol.cloud.get_devices
+                    )
                     if devices:
                         found = list(
                             filter(
                                 lambda d: not d.get("parent_id")
-                                and any(str(d["model"]).startswith(prefix) for prefix in DREAME_MODELS),
+                                and any(
+                                    str(d["model"]).startswith(prefix)
+                                    for prefix in DREAME_MODELS
+                                ),
                                 devices,
                             )
                         )
@@ -349,8 +378,7 @@ class DreameMowerFlowHandler(ConfigFlow, domain=DOMAIN):
 
                         if self.devices:
                             if len(self.devices) == 1:
-                                self.extract_info(
-                                    list(self.devices.values())[0])
+                                self.extract_info(list(self.devices.values())[0])
                                 return await self.async_step_connect()
                             return await self.async_step_devices()
 
@@ -406,14 +434,19 @@ class DreameMowerFlowHandler(ConfigFlow, domain=DOMAIN):
                     errors["base"] = "login_error"
                 elif self.protocol.cloud.logged_in:
                     persistent_notification.dismiss(
-                        self.hass, f"{DOMAIN}_{NOTIFICATION_ID_2FA_LOGIN}")
+                        self.hass, f"{DOMAIN}_{NOTIFICATION_ID_2FA_LOGIN}"
+                    )
 
-                    devices = await self.hass.async_add_executor_job(self.protocol.cloud.get_devices)
+                    devices = await self.hass.async_add_executor_job(
+                        self.protocol.cloud.get_devices
+                    )
                     if devices:
                         found = list(
                             filter(
-                                lambda d: any(str(d["model"]).startswith(
-                                    prefix) for prefix in DREAME_MODELS),
+                                lambda d: any(
+                                    str(d["model"]).startswith(prefix)
+                                    for prefix in DREAME_MODELS
+                                ),
                                 devices["page"]["records"],
                             )
                         )
@@ -422,17 +455,18 @@ class DreameMowerFlowHandler(ConfigFlow, domain=DOMAIN):
                         for device in found:
                             name = (
                                 device["customName"]
-                                if device["customName"] and len(device["customName"]) > 0
+                                if device["customName"]
+                                and len(device["customName"]) > 0
                                 else device["deviceInfo"]["displayName"]
                             )
-                            model = device["model"]
-                            list_name = f"{name} - {model}"
+                            model = model_map[device["model"]]
+                            modelId = device["model"]
+                            list_name = f"{name} - {model} ({modelId})"
                             self.devices[list_name] = device
 
                         if self.devices:
                             if len(self.devices) == 1:
-                                self.extract_info(
-                                    list(self.devices.values())[0])
+                                self.extract_info(list(self.devices.values())[0])
                                 return await self.async_step_connect()
                             return await self.async_step_devices()
 
@@ -446,7 +480,9 @@ class DreameMowerFlowHandler(ConfigFlow, domain=DOMAIN):
                 {
                     vol.Required(CONF_USERNAME, default=self.username): str,
                     vol.Required(CONF_PASSWORD, default=self.password): str,
-                    vol.Required(CONF_COUNTRY, default=self.country): vol.In(["cn", "eu", "us", "ru", "sg"]),
+                    vol.Required(CONF_COUNTRY, default=self.country): vol.In(
+                        ["cn", "eu", "us", "ru", "sg"]
+                    ),
                 }
             ),
             description_placeholders=placeholders,
@@ -485,14 +521,19 @@ class DreameMowerFlowHandler(ConfigFlow, domain=DOMAIN):
                     errors["base"] = "login_error"
                 elif self.protocol.cloud.logged_in:
                     persistent_notification.dismiss(
-                        self.hass, f"{DOMAIN}_{NOTIFICATION_ID_2FA_LOGIN}")
+                        self.hass, f"{DOMAIN}_{NOTIFICATION_ID_2FA_LOGIN}"
+                    )
 
-                    devices = await self.hass.async_add_executor_job(self.protocol.cloud.get_devices)
+                    devices = await self.hass.async_add_executor_job(
+                        self.protocol.cloud.get_devices
+                    )
                     if devices:
                         found = list(
                             filter(
-                                lambda d: any(str(d["model"]).startswith(
-                                    prefix) for prefix in DREAME_MODELS),
+                                lambda d: any(
+                                    str(d["model"]).startswith(prefix)
+                                    for prefix in DREAME_MODELS
+                                ),
                                 devices["page"]["records"],
                             )
                         )
@@ -501,7 +542,8 @@ class DreameMowerFlowHandler(ConfigFlow, domain=DOMAIN):
                         for device in found:
                             name = (
                                 device["customName"]
-                                if device["customName"] and len(device["customName"]) > 0
+                                if device["customName"]
+                                and len(device["customName"]) > 0
                                 else device["deviceInfo"]["displayName"]
                             )
                             model = device["model"]
@@ -510,8 +552,7 @@ class DreameMowerFlowHandler(ConfigFlow, domain=DOMAIN):
 
                         if self.devices:
                             if len(self.devices) == 1:
-                                self.extract_info(
-                                    list(self.devices.values())[0])
+                                self.extract_info(list(self.devices.values())[0])
                                 return await self.async_step_connect()
                             return await self.async_step_devices()
 
@@ -525,14 +566,18 @@ class DreameMowerFlowHandler(ConfigFlow, domain=DOMAIN):
                 {
                     vol.Required(CONF_USERNAME, default=self.username): str,
                     vol.Required(CONF_PASSWORD, default=self.password): str,
-                    vol.Required(CONF_COUNTRY, default=self.country): vol.In(["cn", "eu", "us", "ru", "sg"]),
+                    vol.Required(CONF_COUNTRY, default=self.country): vol.In(
+                        ["cn", "eu", "us", "ru", "sg"]
+                    ),
                 }
             ),
             description_placeholders=placeholders,
             errors=errors,
         )
 
-    async def async_step_devices(self, user_input: dict[str, Any] | None = None) -> FlowResult:
+    async def async_step_devices(
+        self, user_input: dict[str, Any] | None = None
+    ) -> FlowResult:
         """Handle multiple Dreame/Mova Mower devices found."""
         errors: dict[str, str] = {}
         if user_input is not None:
@@ -542,11 +587,14 @@ class DreameMowerFlowHandler(ConfigFlow, domain=DOMAIN):
         return self.async_show_form(
             step_id="devices",
             data_schema=vol.Schema(
-                {vol.Required("devices"): vol.In(list(self.devices))}),
+                {vol.Required("devices"): vol.In(list(self.devices))}
+            ),
             errors=errors,
         )
 
-    async def async_step_options(self, user_input: dict[str, Any] | None = None) -> FlowResult:
+    async def async_step_options(
+        self, user_input: dict[str, Any] | None = None
+    ) -> FlowResult:
         """Handle Dreame/Mova Mower options step."""
         errors = {}
 
@@ -580,7 +628,9 @@ class DreameMowerFlowHandler(ConfigFlow, domain=DOMAIN):
         data_schema = vol.Schema(
             {
                 vol.Required(CONF_NAME, default=self.name): str,
-                vol.Required(CONF_NOTIFY, default=list(NOTIFICATION.keys())): cv.multi_select(NOTIFICATION),
+                vol.Required(
+                    CONF_NOTIFY, default=list(NOTIFICATION.keys())
+                ): cv.multi_select(NOTIFICATION),
             }
         )
 
@@ -595,17 +645,23 @@ class DreameMowerFlowHandler(ConfigFlow, domain=DOMAIN):
         if self.account_type != "local":
             data_schema = data_schema.extend(
                 {
-                    vol.Required(CONF_COLOR_SCHEME, default=default_color_scheme): vol.In(
-                        list(MAP_COLOR_SCHEME_LIST.keys())
+                    vol.Required(
+                        CONF_COLOR_SCHEME, default=default_color_scheme
+                    ): vol.In(list(MAP_COLOR_SCHEME_LIST.keys())),
+                    vol.Required(CONF_ICON_SET, default=default_icon_set): vol.In(
+                        list(MAP_ICON_SET_LIST.keys())
                     ),
-                    vol.Required(CONF_ICON_SET, default=default_icon_set): vol.In(list(MAP_ICON_SET_LIST.keys())),
-                    vol.Required(CONF_MAP_OBJECTS, default=default_objects): cv.multi_select(MAP_OBJECTS),
+                    vol.Required(
+                        CONF_MAP_OBJECTS, default=default_objects
+                    ): cv.multi_select(MAP_OBJECTS),
                     vol.Required(CONF_SQUARE, default=False): bool,
                     vol.Required(CONF_LOW_RESOLUTION, default=False): bool,
                 }
             )
 
-        return self.async_show_form(step_id="options", data_schema=data_schema, errors=errors)
+        return self.async_show_form(
+            step_id="options", data_schema=data_schema, errors=errors
+        )
 
     def extract_info(self, device_info: dict[str, Any]) -> None:
         """Extract the device info."""
