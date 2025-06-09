@@ -676,7 +676,7 @@ class DreameMowerProtocol:
         account_type: str = "dreame",
         device_id: str = None,
     ) -> None:
-        if account_type != "dreame":
+        if account_type != "dreame" and account_type != "mova":
             raise DeviceException(
                 "DreameMowerProtocol: unsupported account_type: %s", account_type) from None
 
