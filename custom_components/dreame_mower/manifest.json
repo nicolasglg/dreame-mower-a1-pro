@@ -1,13 +1,13 @@
 {
   "domain": "dreame_mower",
-  "name": "Dreame Mower",
+  "name": "Dreame Mower A1 Pro",
   "codeowners": [
-    "@bhuebschen"
+    "@nicolasglg"
   ],
   "config_flow": true,
-  "documentation": "https://github.com/bhuebschen/dreame-mower",
+  "documentation": "https://github.com/nicolasglg/dreame-mower-a1-pro",
   "iot_class": "cloud_polling",
-  "issue_tracker": "https://github.com/bhuebschen/dreame-mower/issues",
+  "issue_tracker": "https://github.com/nicolasglg/dreame-mower-a1-pro/issues",
   "requirements": [
     "pillow",
     "numpy",
