@@ -527,7 +527,6 @@ class DreameMowerDevice:
                 results.extend(result)
                 props[:] = props[15:]
             else:
-                _LOGGER.warning("Cloud property request failed, skipping remaining properties")
                 break
 
         return self._handle_properties(results)
@@ -1082,6 +1081,53 @@ class DreameMowerDevice:
         if self._map_manager and previous_battery_level is not None and self.status.battery_level == 100:
             self._map_manager.editor.refresh_map()
 
+    def _populate_stats_from_history(self) -> None:
+        """Calculate cumulative stats from cloud event history when siid:12 properties are unavailable."""
+        if self.get_property(DreameMowerProperty.CLEANING_COUNT) is not None:
+            return
+
+        if not self.cloud_connected:
+            return
+
+        try:
+            diid = DIID(DreameMowerProperty.STATUS, self.property_mapping)
+            result = self._protocol.cloud.get_device_event(diid, 40, 0)
+            if not result:
+                return
+
+            total_time = 0
+            total_area = 0
+            count = 0
+            first_date = None
+
+            for data in result:
+                raw = json.loads(data.get("history") or data.get("value", "[]"))
+                props = {item["piid"]: item["value"] for item in raw if "piid" in item and "value" in item}
+
+                duration = props.get(2, 0)
+                area = props.get(3, 0)
+                timestamp = props.get(8, 0)
+
+                if duration > 1:
+                    total_time += duration
+                    total_area += area
+                    count += 1
+                    if first_date is None or timestamp < first_date:
+                        first_date = timestamp
+
+            if count > 0:
+                self.data[DreameMowerProperty.CLEANING_COUNT.value] = count
+                self.data[DreameMowerProperty.TOTAL_CLEANING_TIME.value] = total_time
+                self.data[DreameMowerProperty.TOTAL_CLEANED_AREA.value] = total_area
+                if first_date:
+                    self.data[DreameMowerProperty.FIRST_CLEANING_DATE.value] = first_date
+                _LOGGER.info(
+                    "Stats calculated from history: %d sessions, %d min, %d area, first=%s",
+                    count, total_time, total_area, first_date,
+                )
+        except Exception as ex:
+            _LOGGER.warning("Failed to populate stats from history: %s", ex)
+
     def _request_cleaning_history(self) -> None:
         """Get and parse the cleaning history from cloud event data and set it to memory"""
         if (
@@ -1101,16 +1147,14 @@ class DreameMowerDevice:
             _LOGGER.info("Get Cleaning History")
             try:
                 # Limit the results
-                start = None
                 max = 25
                 total = self.get_property(DreameMowerProperty.CLEANING_COUNT)
-                if total > 0:
-                    start = self.get_property(DreameMowerProperty.FIRST_CLEANING_DATE)
+                start = self.get_property(DreameMowerProperty.FIRST_CLEANING_DATE)
 
-                if start is None:
-                    start = int(time.time())
                 if total is None:
                     total = 5
+                if start is None:
+                    start = int(time.time())
                 limit = 40
                 if total < max:
                     limit = total + max
@@ -1387,6 +1431,7 @@ class DreameMowerDevice:
                         self.update_map()
 
                 if self.cloud_connected:
+                    self._populate_stats_from_history()
                     self._cleaning_history_update = -1
                     self._request_cleaning_history()
                     if (self.capability.ai_detection and not self.status.ai_policy_accepted) or True:
@@ -1402,6 +1447,7 @@ class DreameMowerDevice:
                                 )
                         except:
                             pass
+
 
             if not self.available:
                 self.available = True

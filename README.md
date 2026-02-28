@@ -17,6 +17,10 @@ Start, stop, and dock your mower, monitor battery and charging status, and more 
 | Charging Status | Sensor | Charging or not |
 | Firmware Version | Sensor | Installed firmware |
 | Do Not Disturb | Switch | Enable/disable DnD mode |
+| Cleaning Count | Sensor | Total number of mowing sessions |
+| Total Cleaning Time | Sensor | Cumulative mowing time (minutes) |
+| Total Cleaned Area | Sensor | Cumulative mowed area |
+| First Cleaning Date | Sensor | Date of the very first mow |
 
 ## Installation
 
@@ -50,7 +54,7 @@ Tested and working on the **Dreame A1 Pro**. It may work on other Dreame robotic
 Features being worked on for future releases:
 
 - [ ] Mowing zone map display
-- [ ] Mowing history and statistics
+- [x] Mowing history and statistics
 - [ ] Schedule management from HA
 - [ ] Custom mowing zones
 - [ ] Mowing progress tracking

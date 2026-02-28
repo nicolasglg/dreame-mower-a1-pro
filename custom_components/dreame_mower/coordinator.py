@@ -92,6 +92,7 @@ class DreameMowerDataUpdateCoordinator(DataUpdateCoordinator[DreameMowerDevice])
         self._has_warning = False
         self._has_temporary_map = None
         self._two_factor_url = None
+        self._properties_logged = False
 
         LOGGER.info("Integration loading: %s", entry.data[CONF_NAME])
         self._device = DreameMowerDevice(
@@ -324,14 +325,6 @@ class DreameMowerDataUpdateCoordinator(DataUpdateCoordinator[DreameMowerDevice])
             LOGGER.info("Integration starting...")
             await self.hass.async_add_executor_job(self._device.update)
             if self._device and not self._device.disconnected:
-                if hasattr(self._device, 'data') and self._device.data:
-                    LOGGER.info(
-                        "Device properties available (%d): %s",
-                        len(self._device.data),
-                        list(self._device.data.keys()),
-                    )
-                else:
-                    LOGGER.info("Device connected but no data properties found")
                 self._device.schedule_update()
                 self.async_set_updated_data()
                 return self._device
@@ -372,6 +365,14 @@ class DreameMowerDataUpdateCoordinator(DataUpdateCoordinator[DreameMowerDevice])
                 data[CONF_TOKEN] = self._token
                 LOGGER.info("Update Host Config: %s", self._host)
                 self.hass.config_entries.async_update_entry(self._entry, data=data)
+
+        if not self._properties_logged and self._ready and hasattr(self._device, 'data') and self._device.data:
+            self._properties_logged = True
+            LOGGER.debug(
+                "Device properties available (%d): %s",
+                len(self._device.data),
+                sorted(self._device.data.keys()),
+            )
 
         if self._device.two_factor_url:
             self._create_persistent_notification(
