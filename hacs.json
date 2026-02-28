@@ -1,7 +1,5 @@
 {
   "name": "Dreame Mower A1 Pro",
-  "render_readme": false,
-  "homeassistant": "2023.6.0",
-  "zip_release": true,
-  "filename": "dreame_mower.zip"
+  "render_readme": true,
+  "homeassistant": "2023.6.0"
 }
