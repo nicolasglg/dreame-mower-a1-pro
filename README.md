@@ -1,7 +1,7 @@
 # Dreame Mower A1 Pro
 
 [![HACS](https://img.shields.io/badge/HACS-Custom-orange?style=flat-square)](https://hacs.xyz/)
-[![Buy Me A Coffee](https://img.shields.io/badge/Buy%20Me%20A%20Coffee-support-yellow?style=flat-square&logo=buy-me-a-coffee)](https://buymeacoffee.com/nicolasglg)
+[![GitHub Release](https://img.shields.io/github/v/release/nicolasglg/dreame-mower-a1-pro?style=flat-square)](https://github.com/nicolasglg/dreame-mower-a1-pro/releases)
 
 **Control your Dreame A1 Pro robotic lawn mower directly from Home Assistant.**
 
@@ -29,6 +29,10 @@ Start, stop, and dock your mower, monitor battery and charging status, and more 
 5. Restart Home Assistant
 6. Go to **Settings** > **Integrations** > **Add Integration** > **Dreame Mower**
 
+> **Enjoying this integration?** It took many hours of reverse-engineering and testing to make this work reliably. If it saves you time, consider supporting the project:
+>
+> [![Buy Me A Coffee](https://img.shields.io/badge/Buy%20Me%20A%20Coffee-support-yellow?style=flat&logo=buy-me-a-coffee)](https://buymeacoffee.com/nicolasglg)
+
 ### Manual
 
 Copy the `custom_components/dreame_mower` folder to your Home Assistant `custom_components/` directory and restart.
@@ -36,6 +40,10 @@ Copy the `custom_components/dreame_mower` folder to your Home Assistant `custom_
 ## Configuration
 
 Use the same Dreame / Xiaomi account credentials as the Dreamehome app.
+
+## Compatibility
+
+Tested and working on the **Dreame A1 Pro**. It may work on other Dreame robotic mowers — if you try it on a different model, please [open an issue](https://github.com/nicolasglg/dreame-mower-a1-pro/issues) to let me know how it goes!
 
 ## Roadmap
 

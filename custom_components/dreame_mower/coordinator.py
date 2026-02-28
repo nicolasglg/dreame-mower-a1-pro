@@ -324,6 +324,14 @@ class DreameMowerDataUpdateCoordinator(DataUpdateCoordinator[DreameMowerDevice])
             LOGGER.info("Integration starting...")
             await self.hass.async_add_executor_job(self._device.update)
             if self._device and not self._device.disconnected:
+                if hasattr(self._device, 'data') and self._device.data:
+                    LOGGER.info(
+                        "Device properties available (%d): %s",
+                        len(self._device.data),
+                        list(self._device.data.keys()),
+                    )
+                else:
+                    LOGGER.info("Device connected but no data properties found")
                 self._device.schedule_update()
                 self.async_set_updated_data()
                 return self._device
