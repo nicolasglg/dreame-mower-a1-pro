@@ -1351,7 +1351,11 @@ class DreameMowerDevice:
             self._dirty_data = {}
             self._dirty_auto_switch_data = {}
             self._dirty_ai_data = {}
-            self._request_properties()
+            try:
+                self._request_properties()
+            except Exception as ex:
+                _LOGGER.warning(
+                    "Initial property request failed (MQTT will provide updates): %s", ex)
             self._last_update_failed = None
 
             if self.device_connected and self._protocol.cloud is not None and (not self._ready or not self.available):

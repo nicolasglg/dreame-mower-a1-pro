@@ -402,7 +402,7 @@ class DreameMowerDreameHomeCloudProtocol:
         self._api_call_async(
             lambda api_response: callback(
                 None
-                if api_response is None or "data" not in api_response or "result" not in api_response["data"]
+                if api_response is None or "data" not in api_response or not api_response["data"] or "result" not in api_response["data"]
                 else api_response["data"]["result"]
             ),
             f"{self._strings[37]}{host}/{self._strings[27]}/{self._strings[38]}",
@@ -439,7 +439,7 @@ class DreameMowerDreameHomeCloudProtocol:
             retry_count,
         )
         self._id = self._id + 1
-        if api_response is None or "data" not in api_response or "result" not in api_response["data"]:
+        if api_response is None or "data" not in api_response or not api_response["data"] or "result" not in api_response["data"]:
             return None
         return api_response["data"]["result"]
 
@@ -449,7 +449,7 @@ class DreameMowerDreameHomeCloudProtocol:
             retry_count = 0
         while retries < retry_count + 1:
             try:
-                response = self._session.get(url, timeout=6)
+                response = self._session.get(url, timeout=15)
             except Exception as ex:
                 response = None
                 _LOGGER.warning("Unable to get file at %s: %s", url, ex)
@@ -574,7 +574,7 @@ class DreameMowerDreameHomeCloudProtocol:
                     url,
                     headers=headers,
                     data=data,
-                    timeout=5,
+                    timeout=15,
                 )
                 break
             except requests.exceptions.Timeout:
@@ -582,7 +582,7 @@ class DreameMowerDreameHomeCloudProtocol:
                 response = None
                 if self._connected:
                     _LOGGER.warning(
-                        "Error while executing request: Read timed out. (read timeout=5): %s",
+                        "Error while executing request: Read timed out. (read timeout=15): %s",
                         data,
                     )
             except Exception as ex:
@@ -605,7 +605,11 @@ class DreameMowerDreameHomeCloudProtocol:
                     "Execute api call failed with response: %s", response.text)
 
         if self._fail_count == 5:
-            self._connected = False
+            if not self._client_connected:
+                self._connected = False
+            else:
+                _LOGGER.debug(
+                    "HTTP requests failing but MQTT client still connected, keeping device connected")
         else:
             self._fail_count = self._fail_count + 1
         return None
@@ -819,7 +823,7 @@ class DreameMowerMiHomeCloudProtocol:
             retry_count = 0
         while retries < retry_count + 1:
             try:
-                response = self._session.get(url, timeout=6)
+                response = self._session.get(url, timeout=15)
             except Exception as ex:
                 response = None
                 _LOGGER.warning("Unable to get file at %s: %s", url, ex)
@@ -1031,7 +1035,7 @@ class DreameMowerMiHomeCloudProtocol:
         while retries < retry_count + 1:
             try:
                 response = self._session.post(
-                    url, headers=headers, cookies=cookies, data=fields, timeout=5)
+                    url, headers=headers, cookies=cookies, data=fields, timeout=15)
                 break
             except Exception as ex:
                 retries = retries + 1
