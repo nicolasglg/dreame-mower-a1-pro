@@ -174,12 +174,18 @@ class DreameMowerChargingStatus(IntEnum):
 
 
 class DreameMowerErrorCode(IntEnum):
-    """Dreame Mower error code"""
+    """Dreame Mower error code.
+
+    NOTE: These codes were originally mapped from vacuum error codes.
+    Codes marked with [MOWER] have been remapped to their actual mower meaning
+    based on community reports (GitHub issues #23, #35).
+    Codes still marked with vacuum names may need further investigation.
+    """
 
     UNKNOWN = -1
     NO_ERROR = 0
     DROP = 1
-    CLIFF = 2
+    TRAPPED = 2  # [MOWER] Was CLIFF - Robot is trapped/stuck
     BUMPER = 3
     GESTURE = 4
     BUMPER_REPEAT = 5
@@ -192,7 +198,7 @@ class DreameMowerErrorCode(IntEnum):
     RIGHT_WHEEL_MOTOR = 16
     TURN_SUFFOCATE = 17
     FORWARD_SUFFOCATE = 18
-    CHARGER_GET = 19
+    ROBOT_LOST = 19  # [MOWER] Was CHARGER_GET - Robot is lost
     BATTERY_LOW = 20
     CHARGE_FAULT = 21
     BATTERY_PERCENTAGE = 22
@@ -204,7 +210,7 @@ class DreameMowerErrorCode(IntEnum):
     CHARGE_NO_ELECTRIC = 28
     BATTERY_FAULT = 29
     FAN_SPEED_ERROR = 30
-    LEFTWHELL_SPEED = 31
+    DOCK_RETURN_FAILED = 31  # [MOWER] Was LEFTWHELL_SPEED - Failed to return to dock
     RIGHTWHELL_SPEED = 32
     BMI055_ACCE = 33
     BMI055_GYRO = 34
@@ -219,8 +225,8 @@ class DreameMowerErrorCode(IntEnum):
     AUTO_KEY_TRIG = 44
     P3V3 = 45
     CAMERA_IDLE = 46
-    BLOCKED = 47
-    LDS_ERROR = 48
+    TASK_CANCELLED = 47  # [MOWER] Was BLOCKED - Scheduled task cancelled (warning, not error)
+    MOWING_COMPLETE = 48  # [MOWER] Was LDS_ERROR - Mowing task complete (not an error!)
     LDS_BUMPER = 49
     FILTER_BLOCKED = 51
     EDGE = 54

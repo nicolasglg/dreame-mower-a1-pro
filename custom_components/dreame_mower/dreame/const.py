@@ -159,6 +159,7 @@ TASK_TYPE_SUMMON_PAUSED: Final = "summon_paused"
 ERROR_NO_ERROR: Final = "no_error"
 ERROR_DROP: Final = "drop"
 ERROR_CLIFF: Final = "cliff"
+ERROR_TRAPPED: Final = "trapped"  # [MOWER] Robot is trapped/stuck
 ERROR_BUMPER: Final = "bumper"
 ERROR_GESTURE: Final = "gesture"
 ERROR_BUMPER_REPEAT: Final = "bumper_repeat"
@@ -172,6 +173,7 @@ ERROR_RIGHT_WHEEL_MOTOR: Final = "right_wheel_motor"
 ERROR_TURN_SUFFOCATE: Final = "turn_suffocate"
 ERROR_FORWARD_SUFFOCATE: Final = "forward_suffocate"
 ERROR_CHARGER_GET: Final = "charger_get"
+ERROR_ROBOT_LOST: Final = "robot_lost"  # [MOWER] Robot is lost
 ERROR_BATTERY_LOW: Final = "battery_low"
 ERROR_CHARGE_FAULT: Final = "charge_fault"
 ERROR_BATTERY_PERCENTAGE: Final = "battery_percentage"
@@ -184,6 +186,7 @@ ERROR_CHARGE_NO_ELECTRIC: Final = "charge_no_electric"
 ERROR_BATTERY_FAULT: Final = "battery_fault"
 ERROR_FAN_SPEED_ERROR: Final = "fan_speed_error"
 ERROR_LEFTWHELL_SPEED: Final = "left_wheell_speed"
+ERROR_DOCK_RETURN_FAILED: Final = "dock_return_failed"  # [MOWER] Failed to return to dock
 ERROR_RIGHTWHELL_SPEED: Final = "right_wheell_speed"
 ERROR_BMI055_ACCE: Final = "bmi055_acce"
 ERROR_BMI055_GYRO: Final = "bmi055_gyro"
@@ -199,7 +202,9 @@ ERROR_AUTO_KEY_TRIG: Final = "auto_key_trig"
 ERROR_P3V3: Final = "p3v3"
 ERROR_CAMERA_IDLE: Final = "camera_idle"
 ERROR_BLOCKED: Final = "blocked"
+ERROR_TASK_CANCELLED: Final = "task_cancelled"  # [MOWER] Scheduled task cancelled
 ERROR_LDS_ERROR: Final = "lds_error"
+ERROR_MOWING_COMPLETE: Final = "mowing_complete"  # [MOWER] Mowing task complete
 ERROR_LDS_BUMPER: Final = "lds_bumper"
 ERROR_FILTER_BLOCKED: Final = "filter_blocked"
 ERROR_EDGE: Final = "edge"
@@ -672,7 +677,7 @@ ERROR_CODE_TO_ERROR_NAME: Final = {
     DreameMowerErrorCode.UNKNOWN: STATE_UNKNOWN,
     DreameMowerErrorCode.NO_ERROR: ERROR_NO_ERROR,
     DreameMowerErrorCode.DROP: ERROR_DROP,
-    DreameMowerErrorCode.CLIFF: ERROR_CLIFF,
+    DreameMowerErrorCode.TRAPPED: ERROR_TRAPPED,
     DreameMowerErrorCode.BUMPER: ERROR_BUMPER,
     DreameMowerErrorCode.GESTURE: ERROR_GESTURE,
     DreameMowerErrorCode.BUMPER_REPEAT: ERROR_BUMPER_REPEAT,
@@ -685,7 +690,7 @@ ERROR_CODE_TO_ERROR_NAME: Final = {
     DreameMowerErrorCode.RIGHT_WHEEL_MOTOR: ERROR_RIGHT_WHEEL_MOTOR,
     DreameMowerErrorCode.TURN_SUFFOCATE: ERROR_TURN_SUFFOCATE,
     DreameMowerErrorCode.FORWARD_SUFFOCATE: ERROR_FORWARD_SUFFOCATE,
-    DreameMowerErrorCode.CHARGER_GET: ERROR_CHARGER_GET,
+    DreameMowerErrorCode.ROBOT_LOST: ERROR_ROBOT_LOST,
     DreameMowerErrorCode.BATTERY_LOW: ERROR_BATTERY_LOW,
     DreameMowerErrorCode.CHARGE_FAULT: ERROR_CHARGE_FAULT,
     DreameMowerErrorCode.BATTERY_PERCENTAGE: ERROR_BATTERY_PERCENTAGE,
@@ -697,7 +702,7 @@ ERROR_CODE_TO_ERROR_NAME: Final = {
     DreameMowerErrorCode.CHARGE_NO_ELECTRIC: ERROR_CHARGE_NO_ELECTRIC,
     DreameMowerErrorCode.BATTERY_FAULT: ERROR_BATTERY_FAULT,
     DreameMowerErrorCode.FAN_SPEED_ERROR: ERROR_FAN_SPEED_ERROR,
-    DreameMowerErrorCode.LEFTWHELL_SPEED: ERROR_LEFTWHELL_SPEED,
+    DreameMowerErrorCode.DOCK_RETURN_FAILED: ERROR_DOCK_RETURN_FAILED,
     DreameMowerErrorCode.RIGHTWHELL_SPEED: ERROR_RIGHTWHELL_SPEED,
     DreameMowerErrorCode.BMI055_ACCE: ERROR_BMI055_ACCE,
     DreameMowerErrorCode.BMI055_GYRO: ERROR_BMI055_GYRO,
@@ -712,8 +717,8 @@ ERROR_CODE_TO_ERROR_NAME: Final = {
     DreameMowerErrorCode.AUTO_KEY_TRIG: ERROR_AUTO_KEY_TRIG,
     DreameMowerErrorCode.P3V3: ERROR_P3V3,
     DreameMowerErrorCode.CAMERA_IDLE: ERROR_CAMERA_IDLE,
-    DreameMowerErrorCode.BLOCKED: ERROR_BLOCKED,
-    DreameMowerErrorCode.LDS_ERROR: ERROR_LDS_ERROR,
+    DreameMowerErrorCode.TASK_CANCELLED: ERROR_TASK_CANCELLED,
+    DreameMowerErrorCode.MOWING_COMPLETE: ERROR_MOWING_COMPLETE,
     DreameMowerErrorCode.LDS_BUMPER: ERROR_LDS_BUMPER,
     DreameMowerErrorCode.FILTER_BLOCKED: ERROR_FILTER_BLOCKED,
     DreameMowerErrorCode.EDGE: ERROR_EDGE,
@@ -800,13 +805,13 @@ ERROR_CODE_TO_IMAGE_INDEX: Final = {
     DreameMowerErrorCode.BUMPER_REPEAT: 1,
     DreameMowerErrorCode.DROP: 2,
     DreameMowerErrorCode.DROP_REPEAT: 2,
-    DreameMowerErrorCode.CLIFF: 3,
+    DreameMowerErrorCode.TRAPPED: 3,
     DreameMowerErrorCode.GESTURE: 15,
     DreameMowerErrorCode.BRUSH: 4,
     DreameMowerErrorCode.SIDE_BRUSH: 5,
     DreameMowerErrorCode.LEFT_WHEEL_MOTOR: 6,
     DreameMowerErrorCode.RIGHT_WHEEL_MOTOR: 6,
-    DreameMowerErrorCode.LEFTWHELL_SPEED: 6,
+    DreameMowerErrorCode.DOCK_RETURN_FAILED: 6,
     DreameMowerErrorCode.RIGHTWHELL_SPEED: 6,
     DreameMowerErrorCode.TURN_SUFFOCATE: 7,
     DreameMowerErrorCode.FORWARD_SUFFOCATE: 7,
@@ -816,14 +821,14 @@ ERROR_CODE_TO_IMAGE_INDEX: Final = {
     DreameMowerErrorCode.BATTERY_LOW: 20,
     DreameMowerErrorCode.BATTERY_FAULT: 29,
     DreameMowerErrorCode.INFRARED_FAULT: 39,
-    DreameMowerErrorCode.LDS_ERROR: 48,
+    DreameMowerErrorCode.MOWING_COMPLETE: 48,
     DreameMowerErrorCode.LDS_BUMPER: 49,
     DreameMowerErrorCode.EDGE: 54,
     DreameMowerErrorCode.EDGE_2: 54,
     DreameMowerErrorCode.ULTRASONIC: 58,
     DreameMowerErrorCode.ROUTE: 61,
     DreameMowerErrorCode.ROUTE_2: 62,
-    DreameMowerErrorCode.BLOCKED: 63,
+    DreameMowerErrorCode.TASK_CANCELLED: 63,
     DreameMowerErrorCode.BLOCKED_2: 63,
     DreameMowerErrorCode.BLOCKED_3: 64,
     DreameMowerErrorCode.RESTRICTED: 65,
@@ -841,9 +846,9 @@ ERROR_CODE_TO_ERROR_DESCRIPTION: Final = {
         "Wheels are suspended",
         "Please reposition the robot and restart.",
     ],
-    DreameMowerErrorCode.CLIFF: [
-        "Cliff sensor error",
-        "Please wipe the cliff sensor and start the cleanup away from the stairs.",
+    DreameMowerErrorCode.TRAPPED: [
+        "Robot is trapped",
+        "The mower is stuck or trapped. Please reposition it and restart.",
     ],
     DreameMowerErrorCode.BUMPER: [
         "Collision sensor is stuck",
@@ -893,9 +898,9 @@ ERROR_CODE_TO_ERROR_DESCRIPTION: Final = {
         "The robot is stuck, or cannot go forward",
         "The robot may be blocked or stuck.",
     ],
-    DreameMowerErrorCode.CHARGER_GET: [
-        "Cannot find base",
-        "Please check whether the power cord is plugged in correctly.",
+    DreameMowerErrorCode.ROBOT_LOST: [
+        "Robot is lost",
+        "The mower cannot determine its position. Please return it to the dock manually.",
     ],
     DreameMowerErrorCode.BATTERY_LOW: [
         "Low battery",
@@ -938,9 +943,9 @@ ERROR_CODE_TO_ERROR_DESCRIPTION: Final = {
         "Fan speed sensor error",
         "Please try to restart the mower-mop.",
     ],
-    DreameMowerErrorCode.LEFTWHELL_SPEED: [
-        "Left wheel may be blocked by foreign objects",
-        "Check whether there is any object stuck in the main wheels and start the robot in a new position.",
+    DreameMowerErrorCode.DOCK_RETURN_FAILED: [
+        "Failed to return to dock",
+        "The mower could not find its way back to the charging dock.",
     ],
     DreameMowerErrorCode.RIGHTWHELL_SPEED: [
         "Right wheel may be blocked by foreign objects",
@@ -995,13 +1000,13 @@ ERROR_CODE_TO_ERROR_DESCRIPTION: Final = {
         "Internal error",
         "Please try to restart the mower-mop.",
     ],
-    DreameMowerErrorCode.BLOCKED: [
-        "The robot may be blocked or stuck.",
-        "Cleanup route is blocked, returning to the dock.",
+    DreameMowerErrorCode.TASK_CANCELLED: [
+        "Scheduled task cancelled",
+        "The mower was already working; the scheduled task has been cancelled.",
     ],
-    DreameMowerErrorCode.LDS_ERROR: [
-        "Laser distance sensor error",
-        "Please check whether the laser distance sensor has any jammed items",
+    DreameMowerErrorCode.MOWING_COMPLETE: [
+        "Mowing task complete",
+        "The mowing task has been completed successfully.",
     ],
     DreameMowerErrorCode.LDS_BUMPER: [
         "Laser distance sensor bumper error",

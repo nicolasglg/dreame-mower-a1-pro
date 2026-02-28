@@ -4167,7 +4167,8 @@ class DreameMowerDeviceStatus:
         self.segment_cleaning_mode_list = {}
         self.segment_cleaning_route_list = {}
         self.warning_codes = [
-            DreameMowerErrorCode.BLOCKED,
+            DreameMowerErrorCode.TASK_CANCELLED,
+            DreameMowerErrorCode.MOWING_COMPLETE,
             DreameMowerErrorCode.STATION_DISCONNECTED,
             DreameMowerErrorCode.SELF_TEST_FAILED,
             DreameMowerErrorCode.LOW_BATTERY_TURN_OFF,
@@ -4444,9 +4445,11 @@ class DreameMowerDeviceStatus:
         """Return error of the device."""
         value = self._get_property(DreameMowerProperty.ERROR)
         if value is not None and value in DreameMowerErrorCode._value2member_map_:
-            if (
-                value == DreameMowerErrorCode.LOW_BATTERY_TURN_OFF.value
-                or value == DreameMowerErrorCode.UNKNOWN_WARNING_2.value
+            if value in (
+                DreameMowerErrorCode.LOW_BATTERY_TURN_OFF.value,
+                DreameMowerErrorCode.UNKNOWN_WARNING_2.value,
+                DreameMowerErrorCode.MOWING_COMPLETE.value,
+                DreameMowerErrorCode.TASK_CANCELLED.value,
             ):
                 return DreameMowerErrorCode.NO_ERROR
             return DreameMowerErrorCode(value)
