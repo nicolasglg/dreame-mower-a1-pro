@@ -47,7 +47,17 @@ Use the same Dreame / Xiaomi account credentials as the Dreamehome app.
 
 ## Compatibility
 
-Tested and working on the **Dreame A1 Pro**. It may work on other Dreame robotic mowers — if you try it on a different model, please [open an issue](https://github.com/nicolasglg/dreame-mower-a1-pro/issues) to let me know how it goes!
+| Model | Status | Reported by |
+|-------|--------|-------------|
+| Dreame A1 Pro (`dreame.mower.g2422`) | Tested | @nicolasglg |
+| Dreame A1 (`dreame.mower.p2255`) | Should work | — |
+| Dreame A2 (`dreame.mower.g2408`) | Working | Community |
+| Dreame A2 1200 (`dreame.mower.g2568a`) | Working | Community |
+| Dreame A3 | Working | Community |
+
+If you try it on a different model, please [open an issue](https://github.com/nicolasglg/dreame-mower-a1-pro/issues) to let me know how it goes!
+
+> **Tip:** If login fails with "unknown error" using a Dreame account, try selecting **Mova** instead. Both use the same cloud backend but some accounts work better with one or the other.
 
 ## Credits
 

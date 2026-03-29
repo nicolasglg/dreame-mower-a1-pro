@@ -4,6 +4,8 @@ from __future__ import annotations
 from typing import Any, Final
 import logging
 import re
+
+_LOGGER = logging.getLogger(__name__)
 import voluptuous as vol
 import homeassistant.helpers.config_validation as cv
 from collections.abc import Mapping
@@ -55,7 +57,8 @@ model_map = {
     "dreame.mower.p2255": "A1",
     "dreame.mower.g2422": "A1 Pro",
     "dreame.mower.g2408": "A2",
-    "dreame.mower.g3255": "unknown",
+    "dreame.mower.g2568a": "A2 1200",
+    "dreame.mower.g3255": "A3",
 }
 
 DREAMEHOME: Final = "Dreamehome Account"
@@ -245,7 +248,8 @@ class DreameMowerFlowHandler(ConfigFlow, domain=DOMAIN):
                     if info:
                         self.mac = info["mac"]
                         self.model = info["model"]
-            except:
+            except Exception as ex:
+                _LOGGER.error("Connection failed: %s", ex)
                 errors["base"] = "cannot_connect"
             else:
                 if self.mac:
@@ -459,8 +463,8 @@ class DreameMowerFlowHandler(ConfigFlow, domain=DOMAIN):
                                 and len(device["customName"]) > 0
                                 else device["deviceInfo"]["displayName"]
                             )
-                            model = model_map[device["model"]]
                             modelId = device["model"]
+                            model = model_map.get(modelId, modelId)
                             list_name = f"{name} - {model} ({modelId})"
                             self.devices[list_name] = device
 
