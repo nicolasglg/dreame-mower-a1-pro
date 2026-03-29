@@ -35,7 +35,7 @@ Start, stop, and dock your mower, monitor battery and charging status, and more 
 4. Search for and install **Dreame Mower A1 Pro**
 5. Restart Home Assistant
 6. Go to **Settings** > **Integrations** > **Add Integration** > **Dreame Mower**
-7. Want to make my day? Buy me a beer or a coffee :) [![Buy Me A Coffee](https://img.shields.io/badge/Buy%20Me%20A%20Coffee-support-yellow?style=flat&logo=buy-me-a-coffee)](https://buymeacoffee.com/nicolasglg)
+7. Want to make my day? Buy me a beer :) [![Buy Me A Beer](https://img.shields.io/badge/Buy%20Me%20A%20Beer-support-yellow?style=flat&logo=buy-me-a-coffee)](https://buymeacoffee.com/nicolasglg)
 
 ### Manual
 
