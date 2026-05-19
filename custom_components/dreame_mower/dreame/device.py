@@ -742,6 +742,8 @@ class DreameMowerDevice:
                     self._map_manager.editor.refresh_map()
 
             if task_status is DreameMowerTaskStatus.COMPLETED:
+                self._reset_current_zone()
+
                 if (
                     previous_task_status is DreameMowerTaskStatus.CRUISING_PATH
                     or previous_task_status is DreameMowerTaskStatus.CRUISING_POINT
@@ -885,13 +887,14 @@ class DreameMowerDevice:
                 self._property_changed()
             elif status == DreameMowerStatus.CHARGING.value and previous_status == DreameMowerStatus.BACK_HOME.value:
                 self._cleaning_history_update = time.time()
+                self._reset_current_zone()
+
+            if status == DreameMowerStatus.CHARGING.value:
+                self._reset_current_zone()
 
             if previous_status == DreameMowerStatus.OTA.value:
                 self._ready = False
                 self.connect_device()
-
-            if self.status.docked:
-                self._reset_current_zone()
 
             if self._map_manager:
                 self._map_manager.editor.refresh_map()
@@ -899,8 +902,7 @@ class DreameMowerDevice:
     def _charging_status_changed(self, previous_charging_status: Any = None) -> None:
         self._remote_control = False
         if previous_charging_status is not None:
-            if self.status.docked:
-                self._reset_current_zone()
+            self._reset_current_zone()
 
             if self._map_manager:
                 self._map_manager.editor.refresh_map()
