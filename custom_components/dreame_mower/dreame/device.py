@@ -144,7 +144,12 @@ from .exceptions import (
 from .protocol import DreameMowerProtocol
 from .map import DreameMapMowerMapManager, DreameMowerMapDecoder
 
+
 _LOGGER = logging.getLogger(__name__)
+
+DREAME_RAW_EVENT_LOG_PREFIX = "DREAME_A1_RAW_EVENT"
+DREAME_PROPERTY_LOG_PREFIX = "DREAME_A1_PROPERTY"
+DREAME_MAP_PROPERTY_LOG_PREFIX = "DREAME_A1_MAP_PROPERTY"
 
 
 class DreameMowerDevice:
@@ -368,6 +373,7 @@ class DreameMowerDevice:
             return
 
         _LOGGER.debug("Message Callback: %s", message)
+        _LOGGER.warning("%s: %s", DREAME_RAW_EVENT_LOG_PREFIX, message)
 
         if "method" in message:
             self.available = True
@@ -375,6 +381,7 @@ class DreameMowerDevice:
                 params = []
                 map_params = []
                 for param in message["params"]:
+                    _LOGGER.warning("%s RAW: %s", DREAME_PROPERTY_LOG_PREFIX, param)
                     properties = [prop for prop in DreameMowerProperty]
                     for prop in properties:
                         if prop in self.property_mapping:
@@ -396,6 +403,12 @@ class DreameMowerDevice:
                                         or prop is DreameMowerProperty.ROBOT_TIME
                                         or prop is DreameMowerProperty.OLD_MAP_DATA
                                     ):
+                                        _LOGGER.warning(
+                                            "%s %s: %s",
+                                            DREAME_MAP_PROPERTY_LOG_PREFIX,
+                                            prop.name,
+                                            param,
+                                        )
                                         map_params.append(param)
                                 break
                 if len(map_params) and self._map_manager:
