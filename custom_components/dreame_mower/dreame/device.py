@@ -144,7 +144,12 @@ from .exceptions import (
 from .protocol import DreameMowerProtocol
 from .map import DreameMapMowerMapManager, DreameMowerMapDecoder
 
+
 _LOGGER = logging.getLogger(__name__)
+
+DREAME_RAW_EVENT_LOG_PREFIX = "DREAME_A1_RAW_EVENT"
+DREAME_PROPERTY_LOG_PREFIX = "DREAME_A1_PROPERTY"
+DREAME_MAP_PROPERTY_LOG_PREFIX = "DREAME_A1_MAP_PROPERTY"
 
 
 class DreameMowerDevice:
@@ -213,6 +218,9 @@ class DreameMowerDevice:
         self.host = host
         self.two_factor_url = None
         self.account_type = account_type
+        self.current_zone_id: int | None = None
+        self.current_zone_state: int | None = None
+        self.current_zone_raw: list | None = None
         self.status = DreameMowerDeviceStatus(self)
         self.capability = DreameMowerDeviceCapability(self)
 
@@ -368,6 +376,7 @@ class DreameMowerDevice:
             return
 
         _LOGGER.debug("Message Callback: %s", message)
+        _LOGGER.warning("%s: %s", DREAME_RAW_EVENT_LOG_PREFIX, message)
 
         if "method" in message:
             self.available = True
@@ -375,6 +384,41 @@ class DreameMowerDevice:
                 params = []
                 map_params = []
                 for param in message["params"]:
+                    _LOGGER.warning(
+                        "%s siid=%s piid=%s did=%s value=%s",
+                        DREAME_PROPERTY_LOG_PREFIX,
+                        param.get("siid"),
+                        param.get("piid"),
+                        param.get("did"),
+                        param.get("value"),
+                    )
+
+                    if (
+                        param.get("siid") == 2
+                        and param.get("piid") == 56
+                        and isinstance(param.get("value"), dict)
+                    ):
+                        zone_status = param["value"].get("status")
+                        if zone_status and isinstance(zone_status, list) and len(zone_status) > 0:
+                            current_zone_id = zone_status[0][0]
+                            current_zone_state = zone_status[0][1]
+                            zone_changed = (
+                                self.current_zone_id != current_zone_id
+                                or self.current_zone_state != current_zone_state
+                                or self.current_zone_raw != zone_status
+                            )
+                            self.current_zone_id = current_zone_id
+                            self.current_zone_state = current_zone_state
+                            self.current_zone_raw = zone_status
+                            _LOGGER.warning(
+                                "DREAME_A1_CURRENT_ZONE zone_id=%s zone_state=%s raw=%s",
+                                current_zone_id,
+                                current_zone_state,
+                                zone_status,
+                            )
+                            if zone_changed and self._ready:
+                                self._property_changed()
+
                     properties = [prop for prop in DreameMowerProperty]
                     for prop in properties:
                         if prop in self.property_mapping:
@@ -396,6 +440,12 @@ class DreameMowerDevice:
                                         or prop is DreameMowerProperty.ROBOT_TIME
                                         or prop is DreameMowerProperty.OLD_MAP_DATA
                                     ):
+                                        _LOGGER.warning(
+                                            "%s %s: %s",
+                                            DREAME_MAP_PROPERTY_LOG_PREFIX,
+                                            prop.name,
+                                            param,
+                                        )
                                         map_params.append(param)
                                 break
                 if len(map_params) and self._map_manager:
@@ -692,6 +742,8 @@ class DreameMowerDevice:
                     self._map_manager.editor.refresh_map()
 
             if task_status is DreameMowerTaskStatus.COMPLETED:
+                self._reset_current_zone()
+
                 if (
                     previous_task_status is DreameMowerTaskStatus.CRUISING_PATH
                     or previous_task_status is DreameMowerTaskStatus.CRUISING_POINT
@@ -835,6 +887,10 @@ class DreameMowerDevice:
                 self._property_changed()
             elif status == DreameMowerStatus.CHARGING.value and previous_status == DreameMowerStatus.BACK_HOME.value:
                 self._cleaning_history_update = time.time()
+                self._reset_current_zone()
+
+            if status == DreameMowerStatus.CHARGING.value:
+                self._reset_current_zone()
 
             if previous_status == DreameMowerStatus.OTA.value:
                 self._ready = False
@@ -846,6 +902,8 @@ class DreameMowerDevice:
     def _charging_status_changed(self, previous_charging_status: Any = None) -> None:
         self._remote_control = False
         if previous_charging_status is not None:
+            self._reset_current_zone()
+
             if self._map_manager:
                 self._map_manager.editor.refresh_map()
 
@@ -1426,6 +1484,27 @@ class DreameMowerDevice:
 
             except Exception as ex:
                 _LOGGER.warning("Get Cleaning History failed!: %s", ex)
+
+    def _reset_current_zone(self) -> None:
+        """Clear current mowing zone when the mower is docked."""
+        if (
+            self.current_zone_id is None
+            and self.current_zone_state is None
+            and self.current_zone_raw is None
+        ):
+            return
+
+        _LOGGER.warning(
+            "DREAME_A1_CURRENT_ZONE_RESET previous_zone_id=%s previous_zone_state=%s previous_raw=%s",
+            self.current_zone_id,
+            self.current_zone_state,
+            self.current_zone_raw,
+        )
+        self.current_zone_id = None
+        self.current_zone_state = None
+        self.current_zone_raw = None
+        if self._ready:
+            self._property_changed()
 
     def _property_changed(self) -> None:
         """Call external listener when a property changed"""
