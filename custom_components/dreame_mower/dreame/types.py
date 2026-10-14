@@ -219,6 +219,12 @@ class DreameMowerErrorCode(IntEnum):
     RETURN_TO_CHARGE_FAILED = 1000
 
 
+# A1 Pro (dreame.mower.g2422) reports normal task/dock status changes through
+# the ERROR property. They must not be surfaced as errors (issue #27):
+# 53 = mowing task start, 54 = docked/charging, 70 = mowing, 72 = resuming.
+A1_PRO_STATUS_CODES: Final = frozenset({53, 54, 70, 72})
+
+
 class DreameMowerState(IntEnum):
     """Dreame Mower state"""
 

@@ -16,6 +16,7 @@ import numpy as np
 from PIL import Image, ImageDraw
 
 from .types import (
+    A1_PRO_STATUS_CODES,
     PIID,
     DIID,
     ACTION_AVAILABILITY,
@@ -4842,9 +4843,11 @@ class DreameMowerDeviceStatus:
                 DreameMowerErrorCode.UNKNOWN_WARNING_2.value,
                 DreameMowerErrorCode.MOWING_COMPLETE.value,
                 DreameMowerErrorCode.TASK_CANCELLED.value,
-            ):
+            ) or value in A1_PRO_STATUS_CODES:
                 return DreameMowerErrorCode.NO_ERROR
             return DreameMowerErrorCode(value)
+        if value in A1_PRO_STATUS_CODES:
+            return DreameMowerErrorCode.NO_ERROR
         if value is not None:
             _LOGGER.debug("ERROR_CODE not supported: %s", value)
         return DreameMowerErrorCode.UNKNOWN

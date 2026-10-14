@@ -1,5 +1,14 @@
 # Changelog
 
+## 1.8.11
+
+- Fix the integration options flow (*Configure*) crashing with a 500 error on
+  recent Home Assistant versions: the options handler no longer assigns the
+  read-only `config_entry` property. Requires Home Assistant 2024.11 or newer.
+- Stop reporting normal A1 Pro task/dock status codes (53, 54, 70, 72) as
+  errors. Code 54 is sent on every docking/charging and was surfaced as
+  "Edge sensor error" with an `error_54` notification (#27).
+
 ## 1.8.10
 
 - Keep the A1 Pro state, charging status, and battery sensors registered when
