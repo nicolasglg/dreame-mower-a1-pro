@@ -9,10 +9,8 @@
   "iot_class": "cloud_polling",
   "issue_tracker": "https://github.com/nicolasglg/dreame-mower-a1-pro/issues",
   "requirements": [
-    "pillow",
     "numpy",
     "pybase64",
-    "requests",
     "pycryptodome",
     "python-miio",
     "py-mini-racer",
