@@ -25,7 +25,7 @@
           "host": "Host",
           "token": "Token"
         },
-        "description": "U heeft een API Token van 32 tekens nodig, zie https://www.home-assistant.io/integrations/xiaomi_miio#retrieving-the-access-token voor instructies."
+        "description": "U heeft een API Token van 32 tekens nodig, zie {token_url} voor instructies."
       },
       "mi": {
         "data": {
@@ -34,7 +34,7 @@
           "country": "Serverland",
           "prefer_cloud": "Voorkeur voor cloudverbinding"
         },
-        "description": "Log in op de Xiaomi Miio cloud, zie https://www.openhab.org/addons/bindings/miio/#country-servers voor de te gebruiken cloudserver."
+        "description": "Log in op de Xiaomi Miio cloud, zie {servers_url} voor de te gebruiken cloudserver."
       },
       "dreame": {
         "data": {

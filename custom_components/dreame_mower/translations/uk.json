@@ -25,7 +25,7 @@
           "host": "Хост",
           "token": "Токен"
         },
-        "description": "Вам знадобиться 32-знаковий API-токен, див. https://www.home-assistant.io/integrations/xiaomi_miio#retrieving-the-access-token для інструкцій."
+        "description": "Вам знадобиться 32-знаковий API-токен, див. {token_url} для інструкцій."
       },
       "mi": {
         "data": {
@@ -34,7 +34,7 @@
           "country": "Країна сервера",
           "prefer_cloud": "Перевага хмарного з'єднання"
         },
-        "description": "Увійдіть до хмари Xiaomi, див. https://www.openhab.org/addons/bindings/miio/#country-servers для використання хмарного сервера."
+        "description": "Увійдіть до хмари Xiaomi, див. {servers_url} для використання хмарного сервера."
       },
       "dreame": {
         "data": {

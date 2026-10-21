@@ -301,6 +301,9 @@ class DreameMowerFlowHandler(ConfigFlow, domain=DOMAIN):
                 }
             ),
             errors=errors,
+            description_placeholders={
+                "token_url": "https://www.home-assistant.io/integrations/xiaomi_miio#retrieving-the-access-token"
+            },
         )
 
     async def async_step_mi(
@@ -398,7 +401,10 @@ class DreameMowerFlowHandler(ConfigFlow, domain=DOMAIN):
                     vol.Required(CONF_PREFER_CLOUD, default=self.prefer_cloud): bool,
                 }
             ),
-            description_placeholders=placeholders,
+            description_placeholders={
+                **placeholders,
+                "servers_url": "https://www.openhab.org/addons/bindings/miio/#country-servers",
+            },
             errors=errors,
         )
 

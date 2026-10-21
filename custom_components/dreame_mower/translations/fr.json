@@ -25,7 +25,7 @@
           "host": "Hôte",
           "token": "Jeton"
         },
-        "description": "Vous aurez besoin d'un jeton d'API de 32 caractères, consultez https://www.home-assistant.io/integrations/xiaomi_miio#retrieving-the-access-token pour obtenir des instructions."
+        "description": "Vous aurez besoin d'un jeton d'API de 32 caractères, consultez {token_url} pour obtenir des instructions."
       },
       "mi": {
         "data": {
@@ -34,7 +34,7 @@
           "country": "Pays du serveur",
           "prefer_cloud": "Privilégier la connexion cloud"
         },
-        "description": "Connexion à Xiaomi Miio cloud, consultez https://www.openhab.org/addons/bindings/miio/#country-servers pour déterminer le serveur cloud à utiliser."
+        "description": "Connexion à Xiaomi Miio cloud, consultez {servers_url} pour déterminer le serveur cloud à utiliser."
       },
       "dreame": {
         "data": {

@@ -25,7 +25,7 @@
           "host": "Hoszt",
           "token": "Token"
         },
-        "description": "Szüksége lesz a 32 karakteres API Tokenre, lásd: https://www.home-assistant.io/integrations/xiaomi_miio#retrieving-the-access-token a részletekért."
+        "description": "Szüksége lesz a 32 karakteres API Tokenre, lásd: {token_url} a részletekért."
       },
       "mi": {
         "data": {
@@ -34,7 +34,7 @@
           "country": "Szerver régió",
           "prefer_cloud": "Felhőkapcsolatot részesítse előnyben"
         },
-        "description": "Jelentkezzen be a Xiaomi Miio felhőbe, lásd: https://www.openhab.org/addons/bindings/miio/#country-servers a felhőszerver használatához."
+        "description": "Jelentkezzen be a Xiaomi Miio felhőbe, lásd: {servers_url} a felhőszerver használatához."
       },
       "dreame": {
         "data": {
