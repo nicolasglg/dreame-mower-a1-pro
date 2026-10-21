@@ -25,7 +25,7 @@
           "host": "IP-адрес",
           "token": "Токен"
         },
-        "description": "Вам необходим 32-х значный ключ (токен), подробнее о его получении можете узнать тут: https://www.home-assistant.io/integrations/xiaomi_miio#retrieving-the-access-token"
+        "description": "Вам необходим 32-х значный ключ (токен), подробнее о его получении можете узнать тут: {token_url}"
       },
       "mi": {
         "data": {
@@ -34,7 +34,7 @@
           "country": "Регион/сервер",
           "prefer_cloud": "Предпочитаю облачное подключение"
         },
-        "description": "Подключитесь к облаку Xiaomi, посмотрите https://www.openhab.org/addons/bindings/miio/#country-servers для определения используемого вами сервера в зависимости от вашей страны."
+        "description": "Подключитесь к облаку Xiaomi, посмотрите {servers_url} для определения используемого вами сервера в зависимости от вашей страны."
       },
       "dreame": {
         "data": {

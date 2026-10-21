@@ -25,7 +25,7 @@
           "host": "Host",
           "token": "Token"
         },
-        "description": "Você precisará do Token API de 32 caracteres, consulte https://www.home-assistant.io/integrations/xiaomi_miio#retrieving-the-access-token para obter instruções."
+        "description": "Você precisará do Token API de 32 caracteres, consulte {token_url} para obter instruções."
       },
       "mi": {
         "data": {
@@ -34,7 +34,7 @@
           "country": "País do servidor",
           "prefer_cloud": "Preferir conexão com a nuvem"
         },
-        "description": "Faça login na Xiaomi Miio Cloud, consulte https://www.openhab.org/addons/bindings/miio/#country-servers para saber qual servidor de nuvem usar."
+        "description": "Faça login na Xiaomi Miio Cloud, consulte {servers_url} para saber qual servidor de nuvem usar."
       },
       "dreame": {
         "data": {

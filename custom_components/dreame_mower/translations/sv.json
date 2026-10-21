@@ -25,7 +25,7 @@
           "host": "Värd",
           "token": "Token"
         },
-        "description": "Du behöver 32-karaktärs API Token, se https://www.home-assistant.io/integrations/xiaomi_miio#retrieving-the-access-token för instruktioner."
+        "description": "Du behöver 32-karaktärs API Token, se {token_url} för instruktioner."
       },
       "mi": {
         "data": {
@@ -34,7 +34,7 @@
           "country": "Server-land",
           "prefer_cloud": "Föredra moln-anslutning"
         },
-        "description": "Logga in på Xiaomi Miio cloud, se https://www.openhab.org/addons/bindings/miio/#country-servers för att välja rätt moln-server."
+        "description": "Logga in på Xiaomi Miio cloud, se {servers_url} för att välja rätt moln-server."
       },
       "dreame": {
         "data": {
