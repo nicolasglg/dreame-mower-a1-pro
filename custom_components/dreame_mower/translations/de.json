@@ -553,6 +553,11 @@
           "water_stain_paused": "Die Reinigung von Wasserflecken wurde angehalten"
         }
       }
+    },
+    "number": {
+      "cutting_height": {
+        "name": "Schnitthöhe"
+      }
     }
   },
   "services": {
@@ -991,6 +996,24 @@
         "cycle": {
           "name": "Zyklus",
           "description": "Ob die Option vom ersten bis zum letzten Element durchlaufen soll."
+        }
+      }
+    },
+    "mower_set_cutting_height": {
+      "name": "Schnitthöhe einstellen",
+      "description": "Stellt die Schnitthöhe in Zentimetern ein (3,0 cm bis 7,0 cm in 0,5 cm-Schritten).",
+      "fields": {
+        "height": {
+          "name": "Schnitthöhe",
+          "description": "Schnitthöhe in Zentimetern (3,0 bis 7,0 cm)."
+        },
+        "segment_id": {
+          "name": "Zonen-ID",
+          "description": "ID der Zone, für die die Schnitthöhe gelten soll (leer lassen für die gesamte Karte)."
+        },
+        "map_id": {
+          "name": "Karten-ID",
+          "description": "ID der Karte (leer lassen für die aktuell aktive Karte)."
         }
       }
     }

@@ -346,6 +346,11 @@
           "summon_paused": "Summon mowing paused"
         }
       }
+    },
+    "number": {
+      "cutting_height": {
+        "name": "Cutting height"
+      }
     }
   },
   "services": {
@@ -738,6 +743,24 @@
         "cycle": {
           "name": "Cycle",
           "description": "If the option should cycle from the first to the last."
+        }
+      }
+    },
+    "mower_set_cutting_height": {
+      "name": "Set cutting height",
+      "description": "Set the cutting height in centimetres (3.0 cm to 7.0 cm in 0.5 cm increments).",
+      "fields": {
+        "height": {
+          "name": "Cutting height",
+          "description": "Cutting height in centimetres (3.0 to 7.0 cm)."
+        },
+        "segment_id": {
+          "name": "Segment ID",
+          "description": "Zone/segment ID to apply the cutting height to (omit for map-wide)."
+        },
+        "map_id": {
+          "name": "Map ID",
+          "description": "Map ID to apply the cutting height to (omit for current active map)."
         }
       }
     }

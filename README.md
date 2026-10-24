@@ -31,6 +31,7 @@ Start, stop, and dock your mower, monitor battery and charging status, and more 
 | First Mowing Date | Sensor | Date of the very first mow |
 | Do Not Disturb | Switch | Enable/disable DnD mode |
 | Stop Mowing | Button | Stop current mowing task and return to dock |
+| Cutting Height | Number | Adjust cutting height (3.0 cm to 7.0 cm in 0.5 cm steps) |
 | Error notification | Persistent notification | Automatic alert when the mower reports an error (translated in FR/EN) |
 
 ## Installation
@@ -75,6 +76,10 @@ recorder:
 
 Use the exact entity IDs instead of these globs if another integration also
 creates camera entities whose IDs contain `_map`.
+
+### Services
+
+- **`dreame_mower.mower_set_cutting_height`**: Adjust cutting height (3.0 cm to 7.0 cm in 0.5 cm increments) map-wide or for a specific zone (`segment_id`).
 
 ## Supported model
 
