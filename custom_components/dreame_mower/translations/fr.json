@@ -556,6 +556,11 @@
           "water_stain_paused": "Nettoyage des taches d'eau interrompu"
         }
       }
+    },
+    "number": {
+      "cutting_height": {
+        "name": "Hauteur de coupe"
+      }
     }
   },
   "services": {
@@ -994,6 +999,24 @@
         "cycle": {
           "name": "Faire du vélo",
           "description": "Si l’option doit passer du premier au dernier."
+        }
+      }
+    },
+    "mower_set_cutting_height": {
+      "name": "Définir la hauteur de coupe",
+      "description": "Définit la hauteur de coupe en centimètres (de 3,0 cm à 7,0 cm par pas de 0,5 cm).",
+      "fields": {
+        "height": {
+          "name": "Hauteur de coupe",
+          "description": "Hauteur de coupe en centimètres (3,0 à 7,0 cm)."
+        },
+        "segment_id": {
+          "name": "ID de zone",
+          "description": "ID de la zone à configurer (laisser vide pour toute la carte)."
+        },
+        "map_id": {
+          "name": "ID de carte",
+          "description": "ID de la carte (laisser vide pour la carte active)."
         }
       }
     }

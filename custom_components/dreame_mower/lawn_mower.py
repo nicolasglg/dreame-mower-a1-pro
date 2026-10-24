@@ -63,6 +63,7 @@ from .const import (
     INPUT_OBSTACLE_IGNORED,
     INPUT_KEY,
     INPUT_VALUE,
+    INPUT_CUTTING_HEIGHT,
     SERVICE_CLEAN_ZONE,
     SERVICE_CLEAN_SEGMENT,
     SERVICE_CLEAN_SPOT,
@@ -94,6 +95,7 @@ from .const import (
     SERVICE_RENAME_SHORTCUT,
     SERVICE_SET_OBSTACLE_IGNORE,
     SERVICE_SET_ROUTER_POSITION,
+    SERVICE_SET_CUTTING_HEIGHT,
     CONSUMABLE_BLADES,
     CONSUMABLE_SIDE_BRUSH,
     CONSUMABLE_FILTER,
@@ -534,6 +536,16 @@ async def async_setup_entry(
         DreameMower.async_set_router_position.__name__,
     )
 
+    platform.async_register_entity_service(
+        SERVICE_SET_CUTTING_HEIGHT,
+        {
+            vol.Required(INPUT_CUTTING_HEIGHT): vol.All(vol.Coerce(float), vol.Range(min=3.0, max=7.0)),
+            vol.Optional(INPUT_SEGMENT_ID): cv.positive_int,
+            vol.Optional(INPUT_MAP_ID): cv.positive_int,
+        },
+        DreameMower.async_set_cutting_height.__name__,
+    )
+
     async_add_entities([DreameMower(coordinator)])
 
 
@@ -928,3 +940,15 @@ class DreameMower(DreameMowerEntity, LawnMowerEntity):
                 x,
                 y,
             )
+
+    async def async_set_cutting_height(
+        self, height: float, segment_id: int | None = None, map_id: int | None = None
+    ) -> None:
+        """Set mower cutting height in centimetres."""
+        await self._try_command(
+            "Unable to set cutting height: %s",
+            self.device.set_cutting_height,
+            height,
+            map_id,
+            segment_id,
+        )

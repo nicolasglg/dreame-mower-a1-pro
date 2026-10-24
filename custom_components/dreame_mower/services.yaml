@@ -518,3 +518,34 @@ select_select_next:
       default: true
       selector:
         boolean:
+
+mower_set_cutting_height:
+  target:
+    entity:
+      integration: dreame_mower
+      domain: lawn_mower
+  fields:
+    height:
+      example: 4.5
+      required: true
+      selector:
+        number:
+          min: 3.0
+          max: 7.0
+          step: 0.5
+          unit_of_measurement: cm
+          mode: slider
+    segment_id:
+      example: 1
+      required: false
+      selector:
+        number:
+          min: 1
+          mode: box
+    map_id:
+      example: 1
+      required: false
+      selector:
+        number:
+          min: 1
+          mode: box
