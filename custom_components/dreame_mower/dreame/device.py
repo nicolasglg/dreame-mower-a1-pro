@@ -10,7 +10,7 @@ import traceback
 from datetime import datetime
 from random import randrange
 from threading import Timer
-from typing import Any, Optional
+from typing import Any, Optional, Sequence
 
 import numpy as np
 from PIL import Image, ImageDraw
@@ -45,6 +45,7 @@ from .types import (
     DreameMowerTaskType,
     DreameMapRecoveryStatus,
     DreameMapBackupStatus,
+    MowingPreferenceMode,
     CleaningHistory,
     DreameMowerDeviceCapability,
     DirtyData,
@@ -135,6 +136,20 @@ from .const import (
     ATTR_HAS_SAVED_MAP,
     ATTR_HAS_TEMPORARY_MAP,
     ATTR_CAPABILITIES,
+    ATTR_CUTTING_HEIGHT,
+    ATTR_ZONE_CUTTING_HEIGHTS,
+    MOWING_PREFERENCE_GLOBAL_AREA_ID,
+    MOWING_PREFERENCE_VERSION_INDEX,
+    MOWING_PREFERENCE_MAP_INDEX_INDEX,
+    MOWING_PREFERENCE_AREA_ID_INDEX,
+    MOWING_PREFERENCE_CUTTING_HEIGHT_INDEX,
+    MOWING_PREFERENCE_WRITE_VERSION,
+    MOWING_PREFERENCE_STATUS_SUCCESS,
+    MOWING_PREFERENCE_STATUS_INVALID,
+    MOWING_PREFERENCE_LEGACY_LENGTH,
+    CUTTING_HEIGHT_STEP_CM,
+    CUTTING_HEIGHT_MIN_CM,
+    CUTTING_HEIGHT_DEFAULT_MAX_CM,
 )
 from .resources import ERROR_IMAGE
 from .exceptions import (
@@ -1360,6 +1375,7 @@ class DreameMowerDevice:
                     "Map built from cloud data: %dx%d, %d zones, %d no-go areas",
                     width, height, len(segments), len(no_go_areas),
                 )
+                self.refresh_cutting_height()
 
         except Exception as ex:
             _LOGGER.warning("Failed to build map from cloud data: %s", ex)
@@ -4528,6 +4544,239 @@ class DreameMowerDevice:
             and self._protocol.cloud.connected
             and (not self._protocol.prefer_cloud or self.device_connected)
         )
+    # -------------------------------------------------------------------------
+    # Cutting Height & Mowing Preference API (A1 Pro Action 2:50)
+    # -------------------------------------------------------------------------
+
+    def _build_get_mowing_preference_payload(
+        self,
+        map_index: int,
+        area_id: int = MOWING_PREFERENCE_GLOBAL_AREA_ID,
+    ) -> dict[str, Any]:
+        """Build the 2:50 getter payload for a mowing preference record."""
+        return {
+            "m": "g",
+            "t": "PRE",
+            "d": {
+                "idx": map_index,
+                "region": area_id,
+            },
+        }
+
+    def _build_set_mowing_preference_payload(self, record: Sequence[int]) -> dict[str, Any]:
+        """Build the 2:50 setter payload for a mowing preference record."""
+        return {
+            "m": "s",
+            "t": "PRE",
+            "d": [int(value) for value in record],
+        }
+
+    def _build_get_preference_info_payload(self, map_index: int) -> dict[str, Any]:
+        """Build the 2:50 getter payload for a map's preference overview."""
+        return {
+            "m": "g",
+            "t": "PREI",
+            "d": {
+                "idx": map_index,
+            },
+        }
+
+    def _build_set_preference_mode_payload(
+        self,
+        map_index: int,
+        mode: MowingPreferenceMode,
+    ) -> dict[str, Any]:
+        """Build the 2:50 setter payload for a map's preference mode."""
+        return {
+            "m": "s",
+            "t": "PREP",
+            "d": {
+                "idx": map_index,
+                "value": int(mode),
+            },
+        }
+
+    @staticmethod
+    def _preference_response(result: Any) -> tuple[int | None, Any]:
+        """Split a preference response into its status and payload data."""
+        if not isinstance(result, dict):
+            return None, None
+
+        if result.get("code") not in (None, 0):
+            return None, None
+
+        out_entries = result.get("out")
+        if not isinstance(out_entries, list):
+            return None, None
+
+        for out_entry in out_entries:
+            if not isinstance(out_entry, dict):
+                continue
+
+            status = out_entry.get("r")
+            normalized_status = status if isinstance(status, int) and not isinstance(status, bool) else None
+            data = out_entry.get("d")
+
+            if normalized_status is not None or data is not None:
+                return normalized_status, data
+
+        return None, None
+
+    @staticmethod
+    def _normalize_preference_record(data: Any) -> list[int] | None:
+        """Coerce a response payload into a mowing preference record."""
+        if not isinstance(data, list) or not data:
+            return None
+
+        try:
+            return [int(value) for value in data]
+        except (TypeError, ValueError):
+            return None
+
+    @staticmethod
+    def _normalize_cutting_height(height_cm: float) -> float:
+        """Snap a requested cutting height to a valid settable value in centimetres."""
+        try:
+            requested_height = float(height_cm)
+        except (TypeError, ValueError) as ex:
+            raise ValueError(f"Cutting height must be a number; got {height_cm!r}") from ex
+
+        if not CUTTING_HEIGHT_MIN_CM <= requested_height <= CUTTING_HEIGHT_DEFAULT_MAX_CM:
+            raise ValueError(
+                f"Cutting height must be between {CUTTING_HEIGHT_MIN_CM} cm and "
+                f"{CUTTING_HEIGHT_DEFAULT_MAX_CM} cm; got {requested_height}"
+            )
+
+        return round(requested_height / CUTTING_HEIGHT_STEP_CM) * CUTTING_HEIGHT_STEP_CM
+
+    def refresh_cutting_height(self, map_id: int | None = None) -> float | None:
+        """Read the cutting height (in cm) from the device for the given or active map."""
+        map_index = 0
+        if map_id is not None and map_id > 0:
+            map_index = map_id - 1
+
+        payload = self._build_get_mowing_preference_payload(map_index, MOWING_PREFERENCE_GLOBAL_AREA_ID)
+        try:
+            result = self._protocol.action(2, 50, [payload])
+        except Exception as ex:
+            _LOGGER.debug("Failed to query cutting height: %s", ex)
+            return None
+
+        status, data = self._preference_response(result)
+        record = self._normalize_preference_record(data)
+        if status not in (None, MOWING_PREFERENCE_STATUS_SUCCESS) or record is None:
+            _LOGGER.debug("Invalid mowing preference record received: %s", result)
+            return None
+
+        if len(record) > MOWING_PREFERENCE_CUTTING_HEIGHT_INDEX:
+            height_cm = record[MOWING_PREFERENCE_CUTTING_HEIGHT_INDEX] / 10.0
+            self.status.cutting_height = height_cm
+
+            # Also query zone-specific cutting heights if configured
+            try:
+                info_payload = self._build_get_preference_info_payload(map_index)
+                info_result = self._protocol.action(2, 50, [info_payload])
+                info_status, info_data = self._preference_response(info_result)
+                if info_status in (None, MOWING_PREFERENCE_STATUS_SUCCESS) and isinstance(info_data, dict):
+                    configured_area_ids = []
+                    versions = info_data.get("ver")
+                    if isinstance(versions, list):
+                        for version_entry in versions:
+                            if isinstance(version_entry, (list, tuple)) and version_entry:
+                                try:
+                                    area_id = int(version_entry[0])
+                                    if area_id > 0:
+                                        configured_area_ids.append(area_id)
+                                except (TypeError, ValueError):
+                                    pass
+
+                    for zone_id in configured_area_ids:
+                        zone_payload = self._build_get_mowing_preference_payload(map_index, zone_id)
+                        zone_res = self._protocol.action(2, 50, [zone_payload])
+                        z_stat, z_data = self._preference_response(zone_res)
+                        z_record = self._normalize_preference_record(z_data)
+                        if z_record and len(z_record) > MOWING_PREFERENCE_CUTTING_HEIGHT_INDEX:
+                            self.status.zone_cutting_heights[zone_id] = z_record[MOWING_PREFERENCE_CUTTING_HEIGHT_INDEX] / 10.0
+            except Exception as ex:
+                _LOGGER.debug("Failed to query preference info/zones: %s", ex)
+
+            if self._update_callback:
+                self._update_callback()
+            return height_cm
+
+        return None
+
+    def set_cutting_height(
+        self,
+        height_cm: float,
+        map_id: int | None = None,
+        zone_id: int | None = None,
+    ) -> bool:
+        """Set cutting height in centimetres (e.g. 3.0 to 7.0 in 0.5 steps)."""
+        normalized_height = self._normalize_cutting_height(height_cm)
+        map_index = 0
+        if map_id is not None and map_id > 0:
+            map_index = map_id - 1
+
+        area_id = MOWING_PREFERENCE_GLOBAL_AREA_ID if zone_id is None else int(zone_id)
+
+        # Read base preference record first
+        read_payload = self._build_get_mowing_preference_payload(map_index, area_id)
+        result = self._protocol.action(2, 50, [read_payload])
+        status, data = self._preference_response(result)
+        base_record = self._normalize_preference_record(data)
+
+        # If area-specific record not found, fall back to global map-wide record
+        if base_record is None and area_id != MOWING_PREFERENCE_GLOBAL_AREA_ID:
+            global_payload = self._build_get_mowing_preference_payload(map_index, MOWING_PREFERENCE_GLOBAL_AREA_ID)
+            res_global = self._protocol.action(2, 50, [global_payload])
+            _, data_global = self._preference_response(res_global)
+            base_record = self._normalize_preference_record(data_global)
+
+        if base_record is None:
+            # Fallback default record if mower has not returned one yet
+            base_record = [0] * MOWING_PREFERENCE_LEGACY_LENGTH
+
+        updated_record = list(base_record)
+        while len(updated_record) <= MOWING_PREFERENCE_CUTTING_HEIGHT_INDEX:
+            updated_record.append(0)
+
+        updated_record[MOWING_PREFERENCE_VERSION_INDEX] = MOWING_PREFERENCE_WRITE_VERSION
+        updated_record[MOWING_PREFERENCE_MAP_INDEX_INDEX] = map_index
+        updated_record[MOWING_PREFERENCE_AREA_ID_INDEX] = area_id
+        updated_record[MOWING_PREFERENCE_CUTTING_HEIGHT_INDEX] = int(round(normalized_height * 10))
+
+        set_payload = self._build_set_mowing_preference_payload(updated_record)
+        write_result = self._protocol.action(2, 50, [set_payload])
+        write_status, _ = self._preference_response(write_result)
+
+        if write_status == MOWING_PREFERENCE_STATUS_INVALID and len(updated_record) > MOWING_PREFERENCE_LEGACY_LENGTH:
+            short_payload = self._build_set_mowing_preference_payload(updated_record[:MOWING_PREFERENCE_LEGACY_LENGTH])
+            write_result = self._protocol.action(2, 50, [short_payload])
+            write_status, _ = self._preference_response(write_result)
+
+        if not write_result or write_status not in (None, MOWING_PREFERENCE_STATUS_SUCCESS):
+            _LOGGER.error("Failed to write cutting height preference: %s", write_result)
+            return False
+
+        if zone_id is None:
+            self.status.cutting_height = normalized_height
+            _LOGGER.info("Cutting height set to %s cm for map index %s", normalized_height, map_index)
+        else:
+            self.status.zone_cutting_heights[zone_id] = normalized_height
+            _LOGGER.info("Cutting height set to %s cm for zone %s (map index %s)", normalized_height, zone_id, map_index)
+            # Ensure PER_ZONE mode is active
+            try:
+                mode_payload = self._build_set_preference_mode_payload(map_index, MowingPreferenceMode.PER_ZONE)
+                self._protocol.action(2, 50, [mode_payload])
+            except Exception as ex:
+                _LOGGER.debug("Failed to set preference mode to PER_ZONE: %s", ex)
+
+        if self._update_callback:
+            self._update_callback()
+
+        self.schedule_update(1, True)
+        return True
 
 
 class DreameMowerDeviceStatus:
@@ -4580,6 +4829,8 @@ class DreameMowerDeviceStatus:
         self.dnd_tasks = None
         self.off_peak_charging_config = None
         self.shortcuts = None
+        self.cutting_height: float | None = None
+        self.zone_cutting_heights: dict[int, float] = {}
 
     def _get_property(self, prop: DreameMowerProperty) -> Any:
         """Helper function for accessing a property from device"""
@@ -5844,6 +6095,10 @@ class DreameMowerDeviceStatus:
         attributes[ATTR_MOWER_STATE] = self.state_name.lower()
         attributes[ATTR_HAS_SAVED_MAP] = self._map_manager is not None and self.has_saved_map
         attributes[ATTR_HAS_TEMPORARY_MAP] = self.has_temporary_map
+        if self.cutting_height is not None:
+            attributes[ATTR_CUTTING_HEIGHT] = self.cutting_height
+        if self.zone_cutting_heights:
+            attributes[ATTR_ZONE_CUTTING_HEIGHTS] = self.zone_cutting_heights
 
         if self._capability.lidar_navigation:
             attributes[ATTR_MAPPING] = self.fast_mapping

@@ -499,6 +499,13 @@ class DreameMapBackupStatus(IntEnum):
     FAIL = 4
 
 
+class MowingPreferenceMode(IntEnum):
+    """Dreame Mower preference mode"""
+
+    MAP_WIDE = 0
+    PER_ZONE = 1
+
+
 class DreameMowerProperty(IntEnum):
     """Dreame Mower properties"""
 
@@ -1214,6 +1221,7 @@ class DreameMowerDeviceCapability:
         self.gen5 = False
         self.lensbrush = False
         self._custom_cleaning_mode = False
+        self.cutting_height = True
         self._device = device
 
     def refresh(self, device_capabilities):

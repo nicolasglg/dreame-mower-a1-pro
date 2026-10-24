@@ -7,6 +7,7 @@ from typing import Callable
 
 from homeassistant.components.number import (
     ENTITY_ID_FORMAT,
+    NumberDeviceClass,
     NumberEntity,
     NumberEntityDescription,
     NumberMode,
@@ -17,7 +18,7 @@ from homeassistant.helpers.entity import EntityCategory
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.exceptions import HomeAssistantError
 
-from .const import DOMAIN, UNIT_PERCENT
+from .const import DOMAIN, UNIT_PERCENT, UNIT_CENTIMETER
 
 from .coordinator import DreameMowerDataUpdateCoordinator
 from .entity import DreameMowerEntity, DreameMowerEntityDescription
@@ -45,6 +46,20 @@ NUMBERS: tuple[DreameMowerNumberEntityDescription, ...] = (
         native_unit_of_measurement=UNIT_PERCENT,
         entity_category=EntityCategory.CONFIG,
         post_action=DreameMowerAction.TEST_SOUND,
+    ),
+    DreameMowerNumberEntityDescription(
+        key="cutting_height",
+        icon="mdi:grass",
+        mode=NumberMode.SLIDER,
+        native_min_value=3.0,
+        native_max_value=7.0,
+        native_step=0.5,
+        native_unit_of_measurement=UNIT_CENTIMETER,
+        device_class=NumberDeviceClass.DISTANCE,
+        entity_category=EntityCategory.CONFIG,
+        value_fn=lambda value, device: getattr(device.status, "cutting_height", None),
+        exists_fn=lambda description, device: getattr(device.capability, "cutting_height", False),
+        set_fn=lambda device, value: device.set_cutting_height(value),
     ),
 )
 
@@ -104,7 +119,10 @@ class DreameMowerNumberEntity(DreameMowerEntity, NumberEntity):
         if not self.available:
             raise HomeAssistantError("Entity unavailable")
 
-        value = int(value)
+        if self.entity_description.native_step and self.entity_description.native_step < 1:
+            value = float(value)
+        else:
+            value = int(value)
         if self.entity_description.format_fn is not None:
             value = self.entity_description.format_fn(value, self.device)
 
@@ -131,6 +149,6 @@ class DreameMowerNumberEntity(DreameMowerEntity, NumberEntity):
             )
 
     @property
-    def native_value(self) -> int | None:
+    def native_value(self) -> float | int | None:
         """Return the current Dreame Mower number value."""
         return self._attr_native_value
