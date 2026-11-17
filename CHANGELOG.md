@@ -1,5 +1,12 @@
 # Changelog
 
+## 1.8.12
+
+- Current mowing zone: clear it when no zone is active (only pending or
+  completed zones are reported) instead of reporting a completed zone, and
+  ignore late zone events while the A1 Pro is docked, charging or returning
+  to base (#21, thanks @piuskamil).
+
 ## 1.8.11
 
 - Fix the integration options flow (*Configure*) crashing with a 500 error on
