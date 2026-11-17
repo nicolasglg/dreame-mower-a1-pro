@@ -10,6 +10,7 @@ from dreame.const import (
     MOWING_PREFERENCE_AREA_ID_INDEX,
     MOWING_PREFERENCE_VERSION_INDEX,
 )
+from dreame.exceptions import DeviceUpdateFailedException
 from dreame.types import MowingPreferenceMode
 
 
@@ -45,6 +46,25 @@ def test_refresh_cutting_height_success():
         [{"m": "g", "t": "PRE", "d": {"idx": 0, "region": MOWING_PREFERENCE_GLOBAL_AREA_ID}}],
     )
     device._update_callback.assert_called()
+
+
+def test_refresh_cutting_height_clears_stale_zones():
+    device = make_device()
+    device.status.zone_cutting_heights = {1: 4.0, 2: 6.0}
+
+    # Device now only reports global preference and no zones in info
+    global_record = [0, 0, 0, 0, 50, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+    device._protocol.action.side_effect = [
+        {"code": 0, "out": [{"r": 0, "d": global_record}]},
+        {"code": 0, "out": [{"r": 0, "d": {"ver": []}}]},
+    ]
+
+    result = device.refresh_cutting_height(map_id=1)
+
+    assert result == 5.0
+    assert device.status.cutting_height == 5.0
+    # Stale zones {1: 4.0, 2: 6.0} must have been cleared
+    assert device.status.zone_cutting_heights == {}
 
 
 def test_set_cutting_height_success():
@@ -100,6 +120,42 @@ def test_set_cutting_height_zone_specific():
         call(2, 50, [{"m": "s", "t": "PRE", "d": expected_written_record}]),
         call(2, 50, [{"m": "s", "t": "PREP", "d": {"idx": 0, "value": int(MowingPreferenceMode.PER_ZONE)}}]),
     ])
+
+
+def test_set_cutting_height_failed_read_raises_and_never_writes():
+    device = make_device()
+    # protocol.action returns None on cloud failure / deep sleep (code 80001)
+    device._protocol.action.return_value = None
+
+    with pytest.raises(DeviceUpdateFailedException, match="Cannot read mowing preference"):
+        device.set_cutting_height(5.0, map_id=1)
+
+    # Exactly 1 read action was attempted, zero writes
+    assert device._protocol.action.call_count == 1
+    device._protocol.action.assert_called_once_with(
+        2, 50, [{"m": "g", "t": "PRE", "d": {"idx": 0, "region": 0}}]
+    )
+    assert device.status.cutting_height is None
+
+
+def test_set_cutting_height_failed_read_zone_fallback_fails_and_never_writes():
+    device = make_device()
+    # Both zone read and global fallback read return None
+    device._protocol.action.return_value = None
+
+    with pytest.raises(DeviceUpdateFailedException, match="Cannot read mowing preference"):
+        device.set_cutting_height(5.0, map_id=1, zone_id=3)
+
+    # Read zone, then read global fallback, zero writes
+    assert device._protocol.action.call_count == 2
+    device._protocol.action.assert_has_calls([
+        call(2, 50, [{"m": "g", "t": "PRE", "d": {"idx": 0, "region": 3}}]),
+        call(2, 50, [{"m": "g", "t": "PRE", "d": {"idx": 0, "region": 0}}]),
+    ])
+    for action_call in device._protocol.action.call_args_list:
+        payload = action_call[0][2][0]
+        assert payload.get("m") != "s", "Write action must never be sent when read fails"
+    assert device.status.zone_cutting_heights == {}
 
 
 def test_cutting_height_validation_bounds():
