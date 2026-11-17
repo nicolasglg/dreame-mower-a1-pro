@@ -1004,7 +1004,7 @@
     },
     "mower_set_cutting_height": {
       "name": "Définir la hauteur de coupe",
-      "description": "Définit la hauteur de coupe en centimètres (de 3,0 cm à 7,0 cm par pas de 0,5 cm).",
+      "description": "Définit la hauteur de coupe en centimètres (de 3,0 cm à 7,0 cm par pas de 0,5 cm). Spécifier un segment_id applique la hauteur à cette zone et bascule en mode de préférence par zone.",
       "fields": {
         "height": {
           "name": "Hauteur de coupe",
@@ -1012,7 +1012,7 @@
         },
         "segment_id": {
           "name": "ID de zone",
-          "description": "ID de la zone à configurer (laisser vide pour toute la carte)."
+          "description": "ID de la zone à configurer (laisser vide pour toute la carte). Remarque : spécifier un ID de zone bascule automatiquement le mode de préférence de la tondeuse en mode par zone."
         },
         "map_id": {
           "name": "ID de carte",

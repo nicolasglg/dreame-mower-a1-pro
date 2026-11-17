@@ -1007,7 +1007,7 @@
     },
     "mower_set_cutting_height": {
       "name": "Set cutting height",
-      "description": "Set the cutting height in centimetres (3.0 cm to 7.0 cm in 0.5 cm increments).",
+      "description": "Set the cutting height in centimetres (3.0 cm to 7.0 cm in 0.5 cm increments). Specifying a segment_id applies the height to that zone and switches the preference mode to per-zone.",
       "fields": {
         "height": {
           "name": "Cutting height",
@@ -1015,7 +1015,7 @@
         },
         "segment_id": {
           "name": "Segment ID",
-          "description": "Zone/segment ID to apply the cutting height to (omit for map-wide)."
+          "description": "Zone/segment ID to apply the cutting height to (omit for map-wide). Note: Specifying a zone ID automatically switches the mower preference mode to per-zone mode."
         },
         "map_id": {
           "name": "Map ID",

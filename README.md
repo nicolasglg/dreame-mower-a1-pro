@@ -79,7 +79,7 @@ creates camera entities whose IDs contain `_map`.
 
 ### Services
 
-- **`dreame_mower.mower_set_cutting_height`**: Adjust cutting height (3.0 cm to 7.0 cm in 0.5 cm increments) map-wide or for a specific zone (`segment_id`).
+- **`dreame_mower.mower_set_cutting_height`**: Adjust cutting height (3.0 cm to 7.0 cm in 0.5 cm increments) map-wide or for a specific zone (`segment_id`). Note: setting a zone-specific height automatically switches the mower preference mode to per-zone mode (`PER_ZONE`) so the zone override takes effect.
 
 ## Supported model
 

@@ -1001,7 +1001,7 @@
     },
     "mower_set_cutting_height": {
       "name": "Schnitthöhe einstellen",
-      "description": "Stellt die Schnitthöhe in Zentimetern ein (3,0 cm bis 7,0 cm in 0,5 cm-Schritten).",
+      "description": "Stellt die Schnitthöhe in Zentimetern ein (3,0 cm bis 7,0 cm in 0,5 cm-Schritten). Die Angabe einer segment_id wendet die Schnitthöhe auf diese Zone an und schaltet den Präferenzmodus auf Zonenmodus um.",
       "fields": {
         "height": {
           "name": "Schnitthöhe",
@@ -1009,7 +1009,7 @@
         },
         "segment_id": {
           "name": "Zonen-ID",
-          "description": "ID der Zone, für die die Schnitthöhe gelten soll (leer lassen für die gesamte Karte)."
+          "description": "ID der Zone, für die die Schnitthöhe gelten soll (leer lassen für die gesamte Karte). Hinweis: Die Angabe einer Zonen-ID schaltet den Präferenzmodus des Mähers automatisch auf den Zonenmodus um."
         },
         "map_id": {
           "name": "Karten-ID",
