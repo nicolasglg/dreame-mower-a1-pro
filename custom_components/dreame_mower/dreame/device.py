@@ -2478,6 +2478,12 @@ class DreameMowerDevice:
                     ]
                 )
 
+            if self.capability.cutting_height:
+                try:
+                    self.refresh_cutting_height()
+                except Exception as ex:
+                    _LOGGER.debug("Failed to refresh cutting height: %s", ex)
+
         if self._map_manager and not self.status.running and now - self._last_map_list_request > 60:
             properties.extend([DreameMowerProperty.MAP_LIST, DreameMowerProperty.RECOVERY_MAP_LIST])
             self._last_map_list_request = time.time()
@@ -4682,6 +4688,7 @@ class DreameMowerDevice:
         if len(record) > MOWING_PREFERENCE_CUTTING_HEIGHT_INDEX:
             height_cm = record[MOWING_PREFERENCE_CUTTING_HEIGHT_INDEX] / 10.0
             self.status.cutting_height = height_cm
+            self.status.zone_cutting_heights.clear()
 
             # Also query zone-specific cutting heights if configured
             try:
