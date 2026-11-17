@@ -4733,20 +4733,27 @@ class DreameMowerDevice:
 
         # Read base preference record first
         read_payload = self._build_get_mowing_preference_payload(map_index, area_id)
-        result = self._protocol.action(2, 50, [read_payload])
+        try:
+            result = self._protocol.action(2, 50, [read_payload])
+        except Exception as ex:
+            _LOGGER.debug("Failed to read preference record for area %s: %s", area_id, ex)
+            result = None
         status, data = self._preference_response(result)
         base_record = self._normalize_preference_record(data)
 
         # If area-specific record not found, fall back to global map-wide record
         if base_record is None and area_id != MOWING_PREFERENCE_GLOBAL_AREA_ID:
             global_payload = self._build_get_mowing_preference_payload(map_index, MOWING_PREFERENCE_GLOBAL_AREA_ID)
-            res_global = self._protocol.action(2, 50, [global_payload])
+            try:
+                res_global = self._protocol.action(2, 50, [global_payload])
+            except Exception as ex:
+                _LOGGER.debug("Failed to read global preference record: %s", ex)
+                res_global = None
             _, data_global = self._preference_response(res_global)
             base_record = self._normalize_preference_record(data_global)
 
         if base_record is None:
-            # Fallback default record if mower has not returned one yet
-            base_record = [0] * MOWING_PREFERENCE_LEGACY_LENGTH
+            raise DeviceUpdateFailedException("Cannot read mowing preference record from device")
 
         updated_record = list(base_record)
         while len(updated_record) <= MOWING_PREFERENCE_CUTTING_HEIGHT_INDEX:
