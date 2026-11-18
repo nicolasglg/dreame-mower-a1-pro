@@ -4758,10 +4758,14 @@ class DreameMowerDevice:
         except Exception as ex:
             _LOGGER.debug("Failed to read preference record for area %s: %s", area_id, ex)
             result = None
+
+        if result is None:
+            raise DeviceUpdateFailedException("Cannot read mowing preference record from device")
+
         status, data = self._preference_response(result)
         base_record = self._normalize_preference_record(data)
 
-        # If area-specific record not found, fall back to global map-wide record
+        # If the device answered successfully without a zone record, fall back to global map-wide record
         if base_record is None and area_id != MOWING_PREFERENCE_GLOBAL_AREA_ID:
             global_payload = self._build_get_mowing_preference_payload(map_index, MOWING_PREFERENCE_GLOBAL_AREA_ID)
             try:
@@ -4769,6 +4773,10 @@ class DreameMowerDevice:
             except Exception as ex:
                 _LOGGER.debug("Failed to read global preference record: %s", ex)
                 res_global = None
+
+            if res_global is None:
+                raise DeviceUpdateFailedException("Cannot read global mowing preference record from device")
+
             _, data_global = self._preference_response(res_global)
             base_record = self._normalize_preference_record(data_global)
 
