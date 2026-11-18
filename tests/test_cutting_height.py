@@ -21,10 +21,12 @@ def make_device() -> DreameMowerDevice:
         cutting_height=None,
         zone_cutting_heights={},
         attributes={},
+        sleeping=False,
     )
     device._update_callback = Mock()
-    device._protocol = SimpleNamespace(action=Mock(return_value={"code": 0}))
+    device._protocol = SimpleNamespace(action=Mock(return_value={"code": 0}), connected=True)
     device.schedule_update = Mock()
+    device._last_cutting_height_request = 0
     return device
 
 
@@ -65,6 +67,34 @@ def test_refresh_cutting_height_clears_stale_zones():
     assert device.status.cutting_height == 5.0
     # Stale zones {1: 4.0, 2: 6.0} must have been cleared
     assert device.status.zone_cutting_heights == {}
+
+
+def test_refresh_cutting_height_skips_when_sleeping_or_unreachable():
+    device = make_device()
+    device.status.cutting_height = 4.0
+
+    # Case 1: Mower is in deep sleep
+    device.status.sleeping = True
+    result = device.refresh_cutting_height(map_id=1)
+    assert result == 4.0
+    assert device._protocol.action.call_count == 0
+
+    # Case 2: force=True bypasses sleep check (e.g. initial cloud map load)
+    device._protocol.action.return_value = {
+        "code": 0,
+        "out": [{"r": 0, "d": [0, 0, 0, 0, 50, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]}],
+    }
+    result = device.refresh_cutting_height(map_id=1, force=True)
+    assert result == 5.0
+    assert device._protocol.action.call_count >= 1
+
+    # Case 3: Mower is disconnected / unreachable
+    device.status.sleeping = False
+    device._protocol.connected = False
+    device._protocol.action.reset_mock()
+    result = device.refresh_cutting_height(map_id=1)
+    assert result == 5.0
+    assert device._protocol.action.call_count == 0
 
 
 def test_set_cutting_height_success():
@@ -138,24 +168,51 @@ def test_set_cutting_height_failed_read_raises_and_never_writes():
     assert device.status.cutting_height is None
 
 
-def test_set_cutting_height_failed_read_zone_fallback_fails_and_never_writes():
+def test_set_cutting_height_zone_transient_failure_does_not_read_global():
     device = make_device()
-    # Both zone read and global fallback read return None
+    # Transient communication failure on zone read (action returns None)
     device._protocol.action.return_value = None
 
     with pytest.raises(DeviceUpdateFailedException, match="Cannot read mowing preference"):
         device.set_cutting_height(5.0, map_id=1, zone_id=3)
 
-    # Read zone, then read global fallback, zero writes
-    assert device._protocol.action.call_count == 2
+    # Must raise immediately without attempting global fallback, preventing overwrite
+    assert device._protocol.action.call_count == 1
+    device._protocol.action.assert_called_once_with(
+        2, 50, [{"m": "g", "t": "PRE", "d": {"idx": 0, "region": 3}}]
+    )
+    assert device.status.zone_cutting_heights == {}
+
+
+def test_set_cutting_height_zone_no_record_falls_back_to_global_success():
+    device = make_device()
+    # Device answers that zone 3 has no record (empty data)
+    global_record = [0, 0, 0, 0, 40, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+    device._protocol.action.side_effect = [
+        {"code": 0, "out": [{"r": 0, "d": []}]},             # Zone 3 query: answered, but no record
+        {"code": 0, "out": [{"r": 0, "d": global_record}]},   # Global fallback query: success
+        {"code": 0, "out": [{"r": 0, "d": []}]},             # Write updated zone record
+        {"code": 0, "out": [{"r": 0, "d": []}]},             # Switch mode to PER_ZONE
+    ]
+
+    result = device.set_cutting_height(5.5, map_id=1, zone_id=3)
+
+    assert result is True
+    assert device.status.zone_cutting_heights[3] == 5.5
+
+    expected_written_record = list(global_record)
+    expected_written_record[MOWING_PREFERENCE_CUTTING_HEIGHT_INDEX] = 55
+    expected_written_record[MOWING_PREFERENCE_MAP_INDEX_INDEX] = 0
+    expected_written_record[MOWING_PREFERENCE_AREA_ID_INDEX] = 3
+    expected_written_record[MOWING_PREFERENCE_VERSION_INDEX] = 0
+
+    assert device._protocol.action.call_count == 4
     device._protocol.action.assert_has_calls([
         call(2, 50, [{"m": "g", "t": "PRE", "d": {"idx": 0, "region": 3}}]),
         call(2, 50, [{"m": "g", "t": "PRE", "d": {"idx": 0, "region": 0}}]),
+        call(2, 50, [{"m": "s", "t": "PRE", "d": expected_written_record}]),
+        call(2, 50, [{"m": "s", "t": "PREP", "d": {"idx": 0, "value": int(MowingPreferenceMode.PER_ZONE)}}]),
     ])
-    for action_call in device._protocol.action.call_args_list:
-        payload = action_call[0][2][0]
-        assert payload.get("m") != "s", "Write action must never be sent when read fails"
-    assert device.status.zone_cutting_heights == {}
 
 
 def test_cutting_height_validation_bounds():
