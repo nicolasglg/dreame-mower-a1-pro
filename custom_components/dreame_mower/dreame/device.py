@@ -150,6 +150,7 @@ from .const import (
     CUTTING_HEIGHT_STEP_CM,
     CUTTING_HEIGHT_MIN_CM,
     CUTTING_HEIGHT_DEFAULT_MAX_CM,
+    CUTTING_HEIGHT_REFRESH_INTERVAL,
 )
 from .resources import ERROR_IMAGE
 from .exceptions import (
@@ -206,6 +207,7 @@ class DreameMowerDevice:
         self._last_change: float = 0  # Last property change time
         self._last_update_failed: float = 0  # Last update failed time
         self._cleaning_history_update: float = 0  # Cleaning history update time
+        self._last_cutting_height_request: float = 0
         self._update_fail_count: int = 0  # Update failed counter
         self._map_select_time: float = None
         # Map Manager object. Only available when cloud connection is present
@@ -1386,7 +1388,7 @@ class DreameMowerDevice:
                     "Map built from cloud data: %dx%d, %d zones, %d no-go areas",
                     width, height, len(segments), len(no_go_areas),
                 )
-                self.refresh_cutting_height()
+                self.refresh_cutting_height(force=True)
 
         except Exception as ex:
             _LOGGER.warning("Failed to build map from cloud data: %s", ex)
@@ -2478,9 +2480,15 @@ class DreameMowerDevice:
                     ]
                 )
 
-            if self.capability.cutting_height:
+        if (
+            self.capability.cutting_height
+            and now - self._last_cutting_height_request >= CUTTING_HEIGHT_REFRESH_INTERVAL
+        ):
+            if not getattr(self, "device_connected", True) or getattr(self.status, "sleeping", False):
+                _LOGGER.debug("Skipping cutting height refresh: mower is asleep or unreachable")
+            else:
                 try:
-                    self.refresh_cutting_height()
+                    self.refresh_cutting_height(force=True)
                 except Exception as ex:
                     _LOGGER.debug("Failed to refresh cutting height: %s", ex)
 
@@ -4666,8 +4674,13 @@ class DreameMowerDevice:
 
         return round(requested_height / CUTTING_HEIGHT_STEP_CM) * CUTTING_HEIGHT_STEP_CM
 
-    def refresh_cutting_height(self, map_id: int | None = None) -> float | None:
+    def refresh_cutting_height(self, map_id: int | None = None, force: bool = False) -> float | None:
         """Read the cutting height (in cm) from the device for the given or active map."""
+        if not force and (not getattr(self, "device_connected", True) or getattr(self.status, "sleeping", False)):
+            _LOGGER.debug("Skipping cutting height refresh: mower is asleep or unreachable")
+            return self.status.cutting_height
+
+        self._last_cutting_height_request = time.time()
         map_index = 0
         if map_id is not None and map_id > 0:
             map_index = map_id - 1
@@ -4784,6 +4797,7 @@ class DreameMowerDevice:
             _LOGGER.error("Failed to write cutting height preference: %s", write_result)
             return False
 
+        self._last_cutting_height_request = time.time()
         if zone_id is None:
             self.status.cutting_height = normalized_height
             _LOGGER.info("Cutting height set to %s cm for map index %s", normalized_height, map_index)
