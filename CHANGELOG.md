@@ -1,5 +1,15 @@
 # Changelog
 
+## 1.8.13
+
+- Cutting height control for the A1 Pro (#30, thanks @simonschaubel): a
+  *Cutting Height* number entity (3.0 to 7.0 cm in 0.5 cm steps) and the
+  `dreame_mower.mower_set_cutting_height` service, map-wide or for one zone
+  (`segment_id`). Setting a zone height switches the map to per-zone
+  preferences. The current preference record is always read before it is
+  written, so the other mowing settings are kept. Heights are refreshed at
+  most every 10 minutes, and not while the mower is asleep or unreachable.
+
 ## 1.8.12
 
 - Current mowing zone: clear it when no zone is active (only pending or
