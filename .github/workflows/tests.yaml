@@ -1,0 +1,32 @@
+name: Tests
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  pytest:
+    runs-on: "ubuntu-latest"
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.13", "3.14"]
+    steps:
+      - uses: "actions/checkout@v4"
+      - uses: "actions/setup-python@v5"
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Install test dependencies
+        # python-miio and py-mini-racer are stubbed by tests/conftest.py.
+        run: pip install pytest numpy pillow pybase64 pycryptodome cryptography paho-mqtt requests
+      - name: Run tests
+        # The integration ships a select.py that would shadow the standard
+        # library module, so only the dreame package is put on the import path.
+        run: |
+          mkdir -p "$RUNNER_TEMP/pythonpath"
+          ln -s "$GITHUB_WORKSPACE/custom_components/dreame_mower/dreame" "$RUNNER_TEMP/pythonpath/dreame"
+          PYTHONPATH="$RUNNER_TEMP/pythonpath" python -m pytest -q tests
