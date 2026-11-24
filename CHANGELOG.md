@@ -1,5 +1,16 @@
 # Changelog
 
+## 1.8.14
+
+- Stop retrying the Dreame login once the account rejects the stored
+  password: the account locks after 5 failed logins. Home Assistant now asks
+  to re-authenticate instead (*Reauthenticate* on the integration card). A
+  revoked session falls back to a single login with the stored password, so
+  the integration reconnects on its own when the password did not change.
+- Fix the re-authentication flow: it crashed and never saved the new
+  password. It now opens the account form, saves the new password and
+  reloads the integration (#34).
+
 ## 1.8.13
 
 - Cutting height control for the A1 Pro (#30, thanks @simonschaubel): a
