@@ -154,6 +154,7 @@ from .const import (
 )
 from .resources import ERROR_IMAGE
 from .exceptions import (
+    DeviceAuthFailedException,
     DeviceUpdateFailedException,
     InvalidActionException,
     InvalidValueException,
@@ -1615,6 +1616,13 @@ class DreameMowerDevice:
             if self._ready:
                 self.available = True
             self._update_fail_count = 0
+        except DeviceAuthFailedException as ex:
+            # Stop polling: retrying with rejected credentials can lock the
+            # account. Re-authenticating reloads the integration.
+            _LOGGER.warning("Update stopped: %s", str(ex))
+            self.available = False
+            self._update_failed(ex)
+            return
         except Exception as ex:
             self._update_fail_count = self._update_fail_count + 1
             if self.available:
@@ -2391,8 +2399,13 @@ class DreameMowerDevice:
         if self._update_running:
             return
 
-        if not self.cloud_connected:
+        if not self.auth_failed and not self.cloud_connected:
             self.connect_cloud()
+
+        if self.auth_failed:
+            raise DeviceAuthFailedException(
+                "Dreame account rejected the credentials, re-authentication required"
+            )
 
         if not self.device_connected:
             self.connect_device()
@@ -4560,6 +4573,12 @@ class DreameMowerDevice:
     def device_connected(self) -> bool:
         """Return connection status of the device."""
         return self._protocol.connected
+
+    @property
+    def auth_failed(self) -> bool:
+        """Return True when the cloud account rejected the stored credentials."""
+        cloud = self._protocol.cloud if self._protocol else None
+        return bool(cloud and getattr(cloud, "auth_failed", False))
 
     @property
     def cloud_connected(self) -> bool:

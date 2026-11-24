@@ -104,6 +104,7 @@ class DreameMowerDreameHomeCloudProtocol:
         self._uid = None
         self._uuid = None
         self._strings = None
+        self._auth_failed = False
 
     def _api_task(self):
         while True:
@@ -148,6 +149,11 @@ class DreameMowerDreameHomeCloudProtocol:
     @property
     def logged_in(self) -> bool:
         return self._logged_in
+
+    @property
+    def auth_failed(self) -> bool:
+        """True once the account rejected the stored credentials."""
+        return self._auth_failed
 
     @property
     def connected(self) -> bool:
@@ -263,6 +269,14 @@ class DreameMowerDreameHomeCloudProtocol:
         return None
 
     def login(self) -> bool:
+        if self._auth_failed:
+            # The account already rejected these credentials. Every new attempt
+            # counts against the account's failed login limit (5) and can lock
+            # it, so wait for the user to re-authenticate instead.
+            _LOGGER.debug("Login skipped: credentials were rejected, re-authentication required")
+            self._logged_in = False
+            return False
+
         self._session.close()
         self._session = requests.session()
         self._logged_in = False
@@ -271,6 +285,7 @@ class DreameMowerDreameHomeCloudProtocol:
             self._strings = json.loads(zlib.decompress(
                 base64.b64decode(DREAME_STRINGS), zlib.MAX_WBITS | 32))
 
+        used_refresh_token = bool(self._secondary_key)
         try:
             if self._secondary_key:
                 data = f"{self._strings[12]}{self._strings[13]}{self._secondary_key}"
@@ -308,15 +323,22 @@ class DreameMowerDreameHomeCloudProtocol:
                     self._location = data.get(
                         self._strings[21], self._location)
                     self._ti = data.get(self._strings[22], self._ti)
+            elif response.status_code in (400, 401, 403):
+                if used_refresh_token:
+                    # The refresh token was revoked (password change, sign out
+                    # from the app...): try the stored password once.
+                    _LOGGER.debug("Refresh token rejected, logging in with the password: %s", response.text)
+                    self._secondary_key = None
+                    return self.login()
+                self._auth_failed = True
+                _LOGGER.error(
+                    "Login failed, the Dreame account rejected the credentials "
+                    "(re-authenticate the integration): %s",
+                    response.text,
+                )
             else:
-                try:
-                    data = json.loads(response.text)
-                    if "error_description" in data and "refresh token" in data["error_description"]:
-                        self._secondary_key = None
-                        return self.login()
-                except:
-                    pass
-                _LOGGER.error("Login failed: %s", response.text)
+                # Server side or rate limit error, not a credential error: retry later.
+                _LOGGER.warning("Login failed (%s): %s", response.status_code, response.text)
         except requests.exceptions.Timeout:
             response = None
             _LOGGER.warning("Login Failed: Read timed out. (read timeout=10)")

@@ -2,7 +2,8 @@
   "config": {
     "abort": {
       "already_configured": "L'appareil est déjà configuré",
-      "cannot_connect": "Impossible d'établir la connexion."
+      "cannot_connect": "Impossible d'établir la connexion.",
+      "reauth_successful": "La reconnexion a réussi"
     },
     "error": {
       "cannot_connect": "Impossible d'établir la connexion.",
