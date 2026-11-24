@@ -16,10 +16,11 @@ from homeassistant.const import (
     ATTR_ENTITY_ID,
 )
 from homeassistant.core import HomeAssistant, callback
+from homeassistant.exceptions import ConfigEntryAuthFailed
 from homeassistant.helpers.dispatcher import async_dispatcher_connect
 from homeassistant.helpers.entity import generate_entity_id
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, UpdateFailed
-from .dreame import DreameMowerDevice, DreameMowerProperty
+from .dreame import DeviceAuthFailedException, DreameMowerDevice, DreameMowerProperty
 from .dreame.types import DreameMowerState
 from .dreame.resources import (
     CONSUMABLE_IMAGE,
@@ -395,12 +396,17 @@ class DreameMowerDataUpdateCoordinator(DataUpdateCoordinator[DreameMowerDevice])
                 self.async_set_updated_data()
                 return self._device
         except Exception as ex:
-            LOGGER.warning("Integration start failed: %s", traceback.format_exc())
+            auth_failed = isinstance(ex, DeviceAuthFailedException)
+            if not auth_failed:
+                LOGGER.warning("Integration start failed: %s", traceback.format_exc())
             if self._device is not None:
                 self._device.listen(None)
                 self._device.disconnect()
                 del self._device
                 self._device = None
+            if auth_failed:
+                # Home Assistant stops retrying and asks the user to re-authenticate.
+                raise ConfigEntryAuthFailed(str(ex)) from ex
             raise UpdateFailed(ex) from ex
 
     @property
@@ -457,6 +463,10 @@ class DreameMowerDataUpdateCoordinator(DataUpdateCoordinator[DreameMowerDevice])
 
     @callback
     def async_set_update_error(self, ex) -> None:
+        if isinstance(ex, DeviceAuthFailedException):
+            # Ask the user for the new credentials (Home Assistant ignores the
+            # request if a re-authentication flow is already open).
+            self._entry.async_start_reauth(self.hass)
         if self._available:
             self._available = self._device and self._device.available
             super().async_set_update_error(ex)

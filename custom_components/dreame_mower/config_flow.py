@@ -190,14 +190,16 @@ class DreameMowerFlowHandler(ConfigFlow, domain=DOMAIN):
 
     async def async_step_reauth(self, user_input: Mapping[str, Any]) -> FlowResult:
         """Perform reauth upon an authentication error or missing cloud credentials."""
+        self.entry = self.hass.config_entries.async_get_entry(self.context["entry_id"])
         self.name = user_input.get(CONF_NAME)
         self.host = user_input.get(CONF_HOST)
         self.token = user_input.get(CONF_TOKEN)
         self.username = user_input.get(CONF_USERNAME)
-        self.password = user_input.get(CONF_PASSWORD)
+        # The stored password was rejected: do not pre-fill it.
+        self.password = None
         self.country = user_input.get(CONF_COUNTRY, "cn")
         self.prefer_cloud = user_input.get(CONF_PREFER_CLOUD, False)
-        self.account_type = user_input.get(CONF_ACCOUNT_TYPE, DREAMEHOME)
+        self.account_type = user_input.get(CONF_ACCOUNT_TYPE, "dreame")
         return await self.async_step_reauth_confirm()
 
     async def async_step_reauth_confirm(
@@ -205,8 +207,25 @@ class DreameMowerFlowHandler(ConfigFlow, domain=DOMAIN):
     ) -> FlowResult:
         """Dialog that informs the user that reauth is required."""
         if user_input is not None:
-            return await self.async_step_cloud()
+            if self.account_type == "mi":
+                return await self.async_step_mi()
+            if self.account_type == "mova":
+                return await self.async_step_mova()
+            return await self.async_step_dreame()
         return self.async_show_form(step_id="reauth_confirm")
+
+    def _async_finish_reauth(self) -> FlowResult:
+        """Save the new cloud credentials on the existing entry and reload it."""
+        return self.async_update_reload_and_abort(
+            self.entry,
+            data={
+                **self.entry.data,
+                CONF_USERNAME: self.username,
+                CONF_PASSWORD: self.password,
+                CONF_COUNTRY: self.country,
+            },
+            reason="reauth_successful",
+        )
 
     async def async_step_connect(
         self, user_input: dict[str, Any] | None = None
@@ -350,6 +369,9 @@ class DreameMowerFlowHandler(ConfigFlow, domain=DOMAIN):
                         self.hass, f"{DOMAIN}_{NOTIFICATION_ID_2FA_LOGIN}"
                     )
 
+                    if self.entry is not None:
+                        return self._async_finish_reauth()
+
                     devices = await self.hass.async_add_executor_job(
                         self.protocol.cloud.get_devices
                     )
@@ -443,6 +465,9 @@ class DreameMowerFlowHandler(ConfigFlow, domain=DOMAIN):
                         self.hass, f"{DOMAIN}_{NOTIFICATION_ID_2FA_LOGIN}"
                     )
 
+                    if self.entry is not None:
+                        return self._async_finish_reauth()
+
                     devices = await self.hass.async_add_executor_job(
                         self.protocol.cloud.get_devices
                     )
@@ -529,6 +554,9 @@ class DreameMowerFlowHandler(ConfigFlow, domain=DOMAIN):
                     persistent_notification.dismiss(
                         self.hass, f"{DOMAIN}_{NOTIFICATION_ID_2FA_LOGIN}"
                     )
+
+                    if self.entry is not None:
+                        return self._async_finish_reauth()
 
                     devices = await self.hass.async_add_executor_job(
                         self.protocol.cloud.get_devices

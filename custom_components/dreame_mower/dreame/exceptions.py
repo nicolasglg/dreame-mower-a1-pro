@@ -6,6 +6,10 @@ class DeviceUpdateFailedException(DeviceException):
     """ """
 
 
+class DeviceAuthFailedException(DeviceException):
+    """The cloud account rejected the stored credentials."""
+
+
 class InvalidValueException(ValueError):
     """ """
 

@@ -38,6 +38,7 @@ from .protocol import DreameMowerProtocol
 from .exceptions import (
     DeviceException,
     DeviceUpdateFailedException,
+    DeviceAuthFailedException,
     InvalidActionException,
     InvalidValueException,
 )
